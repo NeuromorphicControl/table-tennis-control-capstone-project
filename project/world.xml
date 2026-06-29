@@ -1,0 +1,101 @@
+<mujoco>
+  <compiler meshdir="assets" texturedir="assets"/>
+  <statistic extent="1.5" meansize=".05"/>
+
+  <option timestep="0.005" jacobian="auto"/>
+
+  <visual>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <quality shadowsize="4096"/>
+    <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15" zfar="40" haze="0.3"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="512"/>
+    <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2"
+      width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
+
+    <mesh file="table.obj"/>
+
+    <mesh file="arm-base.obj"/>
+    <mesh file="rotator.obj"/>
+    <mesh file="arm1.obj"/>
+    <mesh file="arm2.obj"/>
+    <mesh file="paddle-rotator.obj"/>
+    <mesh file="paddle.obj"/>
+
+    <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
+  </asset>
+
+  <worldbody>
+    <!-- Lights -->
+    <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5.0" dir="0 0 -1" castshadow="false"/>
+    <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
+
+    <!-- Cameras -->
+    <camera name="top_down" pos="0 0 10" euler="0 0 90"/>
+
+    <!-- Ground -->
+    <geom name="ground" type="plane" size="0 0 1" pos="0 0 0" quat="1 0 0 0" material="matplane" condim="1"/>
+
+    <!-- Table -->
+    <geom name="table" type="mesh" mesh="table" pos="0 0 0" euler="0 0 0"/>
+
+    <!-- Arm Base -->
+    <body name="base" pos="0 -3.255 0.45" euler="0 0 0">
+      <joint type="slide" axis="0 1 0" name="base_slide_x" range="-1.8 1.8"/>
+      <joint type="slide" axis="1 0 0" name="base_slide_y" range="-1.8 1.8"/>
+      <geom type="mesh" mesh="arm-base" pos="0 0.95 0.42" euler="0 0 180" rgba=".15 .15 .15 1"/>
+
+      <!-- Camera -->
+      <camera name="follow" pos="0 -2.5 1.5" euler="80 0 0" mode="track"/>
+
+      <!-- Rotator 1 -->
+      <body name="rotator1" pos="0 0.5 0.425" euler="0 0 0">
+        <joint type="hinge" axis="0 0 1" name="rotator1_joint"/>
+        <geom type="mesh" mesh="rotator" pos="0 0.45 0" euler="0 0 180" rgba=".15 .15 .15 1"/>
+
+        <!-- Rotator 2 -->
+        <body name="rotator2" pos="0 0.055 0.06" euler="-90 0 0">
+          <joint type="hinge" axis="0 0 1" name="rotator2_joint"/>
+          <geom type="mesh" mesh="rotator" pos="0 -0.45 0" euler="0 0 0" rgba=".15 .15 .15 1"/>
+
+          <!-- Arm 1 -->
+          <body name="arm1" pos="0 -0.050 0.061" euler="90 0 0">
+            <joint type="hinge" axis="0 0 1" name="arm1_joint"/>
+            <geom type="mesh" mesh="arm1" pos="0 0.335 -0.11" euler="0 0 180" rgba=".15 .15 .15 1"/>
+
+            <!-- Arm 2 -->
+            <body name="arm2" pos="0 0.5 0.045" euler="0 0 0">
+              <joint type="hinge" axis="0 0 1" name="arm2_joint"/>
+              <geom type="mesh" mesh="arm2" pos="0 -0.164 -0.155" euler="0 0 180" rgba=".15 .15 .15 1"/>
+
+              <!-- Paddle Rotator -->
+              <body name="paddle_rotator" pos="0 0.4 0.015" euler="0 180 0">
+                <joint type="hinge" axis="0 0 1" name="paddle_rotator_joint"/>
+                <geom type="mesh" mesh="paddle-rotator" pos="0 -0.565 0.174" euler="0 0 0" rgba=".15 .15 .15 1"/>
+
+                <!-- Paddle -->
+                <body name="paddle" pos="0 0.065 0.035" euler="-90 0 0">
+                  <joint type="hinge" axis="0 0 1" name="paddle_joint"/>
+                  <geom type="mesh" mesh="paddle" pos="-0.094 0 0" euler="90 0 0" rgba="1 .4 .4 1"/>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="base_motor_x" joint="base_slide_x"/>
+    <motor name="base_motor_y" joint="base_slide_y"/>
+    <!-- <motor name="rotator1_motor" joint="rotator1_joint"/>
+    <motor name="rotator2_motor" joint="rotator2_joint"/>
+    <motor name="arm1_motor" joint="arm1_joint"/>
+    <motor name="arm2_motor" joint="arm2_joint"/>
+    <motor name="paddle_rotator_motor" joint="paddle_rotator_joint"/> -->
+    <motor name="paddle_motor" joint="paddle_joint"/>
+  </actuator>
+</mujoco>
