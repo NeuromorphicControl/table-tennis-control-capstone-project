@@ -53,7 +53,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         tau_gravity = data.qfrc_gravcomp
 
         # --- 1. AKTUELLE WERTE AUSLESEN ---
-        x_curr = data.geom_xpos[body_id] # Aktuelle 3D-Position des Schlägers
+        x_curr = data.xpos[body_id] # Aktuelle 3D-Position des Schlägers
         
         # Jacobi-Matrizen für Gelenke (8) initialisieren (Form: 3 Zeilen x 8 Spalten)
         jac_p = np.zeros((3, model.nv)) # translation ((x,y,z),8)
