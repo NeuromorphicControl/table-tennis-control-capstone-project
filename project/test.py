@@ -43,7 +43,7 @@ print(f"Anfangsposition des Schlägers: {initial_paddle}")
 workspace = get_robot_workspace_mujoco(xml_file)
 
 # Definiere deine gewünschte Zielposition
-raw_target = np.array([200.0, -200.0, 100.0])   #
+raw_target = np.array([0.0, -3.0, 1.0]) 
 # Clippe sie auf den Arbeitsraum
 x_target = np.clip(raw_target,
                    [workspace['Total_Min_X'], workspace['Total_Min_Y'], workspace['Min_Z']],
@@ -54,10 +54,10 @@ print(f"Raw Ziel: {raw_target}")
 print(f"Erreichbares Ziel: {x_target}")
 
 # PID-Gains
-Kp = np.array([2.0, 2.0, 2.0])
-Kd = np.array([1.0, 1.0, 1.0])
+Kp = np.array([10.0, 10.0, 10.0])
+Kd = np.array([5.0, 5.0, 5.0])
 Ki = np.array([0.0, 0.0, 0.0])       # Integral aus
-K_null = np.array([10, 10, 5, 5, 2, 2, 1, 1])
+K_null = np.array([5, 5, 2, 2, 1, 1, 0.5, 0.5])
 
 integral_error = np.zeros(3)
 integral_limit = 2.0
@@ -86,7 +86,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         P_force = Kp * error_pos
         D_force = Kd * error_vel
         F_virtual = P_force + D_force
-        F_virtual = np.clip(F_virtual, -50, 50)
+        F_virtual = np.clip(F_virtual, -200, 200)
 
         # 4. Task-Momente
         tau_task = jac_p.T @ F_virtual
@@ -109,15 +109,15 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         tau_null = -K_null * data.qvel
         
         # Deaktiviere paddle_joint (Index 7)
-        tau_task[7] = 0.0
-        tau_gravity_comp[7] = 0.0
-        tau_null[7] = 0.0
+        #tau_task[7] = 0.0
+        #tau_gravity_comp[7] = 0.0
+        #tau_null[7] = 0.0
         
         # 7. Gesamtmoment
         tau_total = tau_task + tau_gravity_comp + tau_null
 
         # Begrenzung
-        max_torque = np.array([100, 100, 50, 50, 20, 20, 10, 10])
+        max_torque = np.array([200, 200, 100, 100, 50, 50, 20, 20])
         tau_total = np.clip(tau_total, -max_torque, max_torque)
 
         # Ansteuern

@@ -78,7 +78,7 @@
 
                 <!-- Paddle -->
                 <body name="paddle" pos="0 0.065 0.035" euler="-90 0 0">
-                  <joint type="hinge" axis="0 0 1" name="paddle_joint"/>
+                  <joint type="hinge" axis="0 0 1" name="paddle_joint" range="0 0" damping="1000"/>
                   <geom type="mesh" mesh="paddle" pos="-0.094 0 0" euler="90 0 0" rgba="1 .4 .4 1"/>
                 </body>
               </body>
