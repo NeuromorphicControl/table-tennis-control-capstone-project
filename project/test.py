@@ -9,6 +9,16 @@ from utils import (
     plot_robot_telemetry,
     plot_pid_controller_analysis
 )
+from orientation_controller import OrientationController
+
+# Gewünschte Orientierung:
+# Das ist die Einheitsquaternion: (1, 0, 0, 0)
+target_quat = np.array([1.0, 0.0, 0.0, 0.0])
+orient_ctrl = OrientationController(
+    Kp_orient=[10.0, 10.0, 10.0],
+    Kd_orient=[5.0, 5.0, 5.0],
+    target_quat=target_quat
+)
 
 # Telemetrie
 telemetry = create_telemetry_storage()
@@ -80,7 +90,11 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         # 4. Task-Momente
         tau_task = jac_p.T @ F_virtual
-
+        
+        orient_ctrl.set_target_horizontal_from_current(data.xmat[body_id])
+        tau_orient = orient_ctrl.compute_torque(data.xmat[body_id], jac_r, data.qvel)
+        tau_task += tau_orient
+        
         # 5. Gravitationskompensation mit mj_inverse
         #    Zuerst setzen wir die Beschleunigung auf Null (für statische Kompensation)
         data.qacc = np.zeros(model.nv)   # Beschleunigung = 0
