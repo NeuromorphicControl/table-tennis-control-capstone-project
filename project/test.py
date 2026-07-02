@@ -15,8 +15,8 @@ from orientation_controller import OrientationController
 # Das ist die Einheitsquaternion: (1, 0, 0, 0)
 target_quat = np.array([1.0, 0.0, 0.0, 0.0])
 orient_ctrl = OrientationController(
-    Kp_orient=[10.0, 10.0, 10.0],
-    Kd_orient=[5.0, 5.0, 5.0],
+    Kp_orient=[20.0, 20.0, 20.0],
+    Kd_orient=[10.0, 10.0, 10.0],
     target_quat=target_quat
 )
 
@@ -91,7 +91,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # 4. Task-Momente
         tau_task = jac_p.T @ F_virtual
         
-        orient_ctrl.set_target_horizontal_from_current(data.xmat[body_id])
+        orient_ctrl.set_target_axis_to_world(data.xmat[body_id], local_axis=2, world_axis=[0,0,1])   
         tau_orient = orient_ctrl.compute_torque(data.xmat[body_id], jac_r, data.qvel)
         tau_task += tau_orient
         
@@ -109,9 +109,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         tau_null = -K_null * data.qvel
         
         # Deaktiviere paddle_joint (Index 7)
-        #tau_task[7] = 0.0
-        #tau_gravity_comp[7] = 0.0
-        #tau_null[7] = 0.0
+        tau_task[7] = 0.0
+        tau_gravity_comp[7] = 0.0
+        tau_null[7] = 0.0
         
         # 7. Gesamtmoment
         tau_total = tau_task + tau_gravity_comp + tau_null
