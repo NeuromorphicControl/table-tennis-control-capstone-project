@@ -89,13 +89,13 @@
   </worldbody>
 
   <actuator>
-    <motor name="base_motor_x" joint="base_slide_x"/>
-    <motor name="base_motor_y" joint="base_slide_y"/>
-    <motor name="rotator1_motor" joint="rotator1_joint"/>
-    <motor name="rotator2_motor" joint="rotator2_joint"/>
-    <motor name="arm1_motor" joint="arm1_joint"/>
-    <motor name="arm2_motor" joint="arm2_joint"/>
-    <motor name="paddle_rotator_motor" joint="paddle_rotator_joint"/> 
-    <motor name="paddle_motor" joint="paddle_joint"/>
+    <motor name="base_motor_x" joint="base_slide_x" gear="200" />
+    <motor name="base_motor_y" joint="base_slide_y" gear="200"/>
+    <motor name="rotator1_motor" joint="rotator1_joint" gear="150"/>
+    <motor name="rotator2_motor" joint="rotator2_joint" gear="150"/>
+    <motor name="arm1_motor" joint="arm1_joint" gear="100"/>
+    <motor name="arm2_motor" joint="arm2_joint" gear="50"/>
+    <motor name="paddle_rotator_motor" joint="paddle_rotator_joint" gear="50"/> 
+    <motor name="paddle_motor" joint="paddle_joint" gear="30"/>
   </actuator>
 </mujoco>
