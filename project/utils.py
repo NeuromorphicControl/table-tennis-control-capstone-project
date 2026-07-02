@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg') 
+import matplotlib.pyplot as plt
 import mujoco
 
 def get_robot_workspace_mujoco(xml_path_or_string, is_string=False):
@@ -88,3 +91,79 @@ def print_workspace_analysis(workspace, paddel_pos):
     print(f"  • Maximale Höhenflexibilität (Z):    {z_spanne:.3f} Einheiten")
 
     print("=" * 55)
+
+def create_telemetry_storage():
+    """Erstellt ein leeres Dictionary, um die Simulationsdaten zu sammeln."""
+    return {
+        "time": [],
+        "distance": [],
+        "target_pos": [],
+        "current_pos": [],
+        "ctrl_signals": [],
+        "grav_comp": [],
+        "task_torques": []
+    }
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_robot_telemetry(data_log):
+    """
+    Verbesserte Darstellung der gesammelten Telemetriedaten.
+    Zeigt:
+      - Abstand zum Ziel über der Zeit
+      - Alle Ctrl-Signale (Motorbefehle) überlagert
+      - Task- und Gravitationsanteile für ausgewählte Gelenke
+    """
+    time_arr = np.array(data_log["time"])
+    ctrl_arr = np.array(data_log["ctrl_signals"])    # (n_steps, 8)
+    grav_arr = np.array(data_log["grav_comp"])       # (n_steps, 8)
+    task_arr = np.array(data_log["task_torques"])    # (n_steps, 8)
+    dist_arr = np.array(data_log["distance"])
+
+    # Figure mit 3 übereinanderliegenden Subplots
+    fig, axes = plt.subplots(3, 1, figsize=(12, 12), sharex=True)
+    fig.suptitle("Robot Control Telemetry", fontsize=16)
+
+    # --- Plot 1: Abstand zum Ziel ---
+    ax1 = axes[0]
+    ax1.plot(time_arr, dist_arr, color='red', linewidth=2, label='Abstand zum Ziel')
+    ax1.set_ylabel('Distanz [m]')
+    ax1.grid(True, linestyle='--', alpha=0.7)
+    ax1.legend(loc='upper right')
+    ax1.set_title('Regelfehler über der Zeit')
+
+    # --- Plot 2: Alle Ctrl-Signale ---
+    ax2 = axes[1]
+    # Verwende eine schöne Farbpalette für 8 Gelenke
+    colors = plt.cm.tab10(np.linspace(0, 1, 8))
+    for i in range(8):
+        ax2.plot(time_arr, ctrl_arr[:, i], color=colors[i], linewidth=1.5, label=f'Gelenk {i}')
+    ax2.set_ylabel('Ctrl-Signal')
+    ax2.grid(True, linestyle='--', alpha=0.7)
+    ax2.legend(loc='upper left', bbox_to_anchor=(1, 1), ncol=2)  # Legende außerhalb
+    ax2.set_title('Alle Motorsignale (ctrl)')
+
+    # --- Plot 3: Task- und Gravitationsanteile für zwei wichtige Gelenke ---
+    ax3 = axes[2]
+    # Wähle Gelenk 2 (Arm1) und Gelenk 6 (Paddle-Rotator) – repräsentativ
+    joints_to_show = [2, 6]
+    for j in joints_to_show:
+        ax3.plot(time_arr, task_arr[:, j], linestyle='-', linewidth=1.5,
+                 label=f'Task Gelenk {j}')
+        ax3.plot(time_arr, grav_arr[:, j], linestyle='--', linewidth=1.5,
+                 label=f'Grav Gelenk {j}')
+    ax3.set_xlabel('Zeit [s]')
+    ax3.set_ylabel('Drehmoment / Kraft')
+    ax3.grid(True, linestyle='--', alpha=0.7)
+    ax3.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    ax3.set_title('Task‑ vs. Gravitationsanteile für ausgewählte Gelenke')
+
+    # Layout anpassen, damit nichts überlappt
+    plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # Platz für Legenden
+
+    # Speichern
+    dateiname = "fehleranalyse_roboter.png"
+    plt.savefig(dateiname, dpi=300, bbox_inches='tight')
+    print(f"\n[Erfolg] Verbesserte Grafik gespeichert als '{dateiname}'")
+    plt.close()
