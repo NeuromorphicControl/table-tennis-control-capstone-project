@@ -28,10 +28,20 @@ base_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, 'base')
 mujoco.mj_forward(model, data)
 initial_paddle = data.xpos[body_id].copy()
 print(f"Anfangsposition des Schlägers: {initial_paddle}")
-x_target = [0.000, -1.674, 1.010]
+
+
+workspace = get_robot_workspace_mujoco(xml_file)
+
+# Definiere deine gewünschte Zielposition
+raw_target = np.array([200.0, -200.0, 100.0])   #
+# Clippe sie auf den Arbeitsraum
+x_target = np.clip(raw_target,
+                   [workspace['Total_Min_X'], workspace['Total_Min_Y'], workspace['Min_Z']],
+                   [workspace['Total_Max_X'], workspace['Total_Max_Y'], workspace['Max_Z']]) # [0.000, -1.674, 1.010]
 x_dot_target = np.array([0.0, 0.0, 0.0])
 
-print(f"Ziel: {x_target}")
+print(f"Raw Ziel: {raw_target}")
+print(f"Erreichbares Ziel: {x_target}")
 
 # PID-Gains
 Kp = np.array([2.0, 2.0, 2.0])
@@ -93,7 +103,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         tau_total = tau_task + tau_gravity_comp + tau_null
 
         # Begrenzung
-        max_torque = np.array([500, 500, 200, 200, 100, 100, 50, 50])
+        max_torque = np.array([100, 100, 50, 50, 20, 20, 10, 10])
         tau_total = np.clip(tau_total, -max_torque, max_torque)
 
         # Ansteuern

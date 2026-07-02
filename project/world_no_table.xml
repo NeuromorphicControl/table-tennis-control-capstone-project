@@ -15,7 +15,8 @@
     <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2"
       width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
 
-    <mesh file="table.obj"/>
+    <!-- Tisch-Mesh wurde entfernt -->
+    <!-- <mesh file="table.obj"/> -->
 
     <mesh file="arm-base.obj"/>
     <mesh file="rotator.obj"/>
@@ -38,10 +39,10 @@
     <!-- Ground -->
     <geom name="ground" type="plane" size="0 0 1" pos="0 0 0" quat="1 0 0 0" material="matplane" condim="1"/>
 
-    <!-- Table -->
-    <geom name="table" type="mesh" mesh="table" pos="0 0 0" euler="0 0 0"/>
+    <!-- Tisch-Geom entfernt -->
+    <!-- <geom name="table" type="mesh" mesh="table" pos="0 0 0" euler="0 0 0"/> -->
 
-    <!-- Arm Base -->
+    <!-- Arm Base (unverändert) -->
     <body name="base" pos="0 -3.255 0.45" euler="0 0 0">
       <joint type="slide" axis="0 1 0" name="base_slide_x" range="-1.8 1.8"/>
       <joint type="slide" axis="1 0 0" name="base_slide_y" range="-1.8 1.8"/>
