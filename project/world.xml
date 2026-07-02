@@ -89,8 +89,8 @@
   </worldbody>
 
   <actuator>
-    <motor name="base_motor_x" joint="base_slide_x" gear="2" />
-    <motor name="base_motor_y" joint="base_slide_y" gear="2"/>
+    <motor name="base_motor_x" joint="base_slide_x" gear="1" />
+    <motor name="base_motor_y" joint="base_slide_y" gear="1"/>
     <motor name="rotator1_motor" joint="rotator1_joint" gear="1"/>
     <motor name="rotator2_motor" joint="rotator2_joint" gear="1"/>
     <motor name="arm1_motor" joint="arm1_joint" gear="1"/>
