@@ -4,6 +4,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import mujoco
 
+
 def get_robot_workspace_mujoco(xml_path_or_string, is_string=False):
     """
     Nutzt die MuJoCo API, um die Gelenkgrenzen der Basis sowie 
@@ -92,11 +93,15 @@ def print_workspace_analysis(workspace, paddel_pos):
 
     print("=" * 55)
 
+
 def create_telemetry_storage():
     """Erstellt ein leeres Dictionary, um die Simulationsdaten zu sammeln."""
     return {
         "time": [],
         "distance": [],
+        "P_norm": [],  
+        "D_norm": [],
+        "I_norm": [],  
         "target_pos": [],
         "current_pos": [],
         "ctrl_signals": [],
@@ -104,10 +109,8 @@ def create_telemetry_storage():
         "task_torques": []
     }
 
-import numpy as np
-import matplotlib.pyplot as plt
 
-def plot_robot_telemetry(data_log):
+def plot_robot_telemetry(data_log, dateiname="fehleranalyse_roboter.png"):
     """
     Verbesserte Darstellung der gesammelten Telemetriedaten.
     Zeigt:
@@ -163,7 +166,60 @@ def plot_robot_telemetry(data_log):
     plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # Platz für Legenden
 
     # Speichern
-    dateiname = "fehleranalyse_roboter.png"
+    dateiname = "output/" + dateiname
     plt.savefig(dateiname, dpi=300, bbox_inches='tight')
     print(f"\n[Erfolg] Verbesserte Grafik gespeichert als '{dateiname}'")
+    plt.close()
+    
+    
+def plot_pid_controller_analysis(data_log, dateiname="pid_controller_analysis.png"):
+    """
+    Zeigt den kompletten PID-Regler in Aktion:
+    - Oben: Abstand zum Ziel (Regelfehler)
+    - Mitte: P-, I- und D-Anteil im Vergleich (als Norm)
+    - Unten: Gesamte virtuelle Kraft (F_virtual) mit allen Anteilen
+    """
+    time_arr = np.array(data_log["time"])
+    dist_arr = np.array(data_log["distance"])
+    P_arr = np.array(data_log["P_norm"])
+    D_arr = np.array(data_log["D_norm"])
+    I_arr = np.array(data_log["I_norm"])
+
+    fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+    fig.suptitle("PID-Regler Analyse – P, I und D im Zusammenspiel", fontsize=16)
+
+    # --- Plot 1: Abstand zum Ziel ---
+    ax1 = axes[0]
+    ax1.plot(time_arr, dist_arr, color='red', linewidth=2)
+    ax1.set_ylabel('Abstand [m]')
+    ax1.grid(True, linestyle='--', alpha=0.7)
+    ax1.set_title('Regelfehler (soll → 0)')
+
+    # --- Plot 2: P-, I- und D-Anteil ---
+    ax2 = axes[1]
+    ax2.plot(time_arr, P_arr, label='P-Anteil (Feder)', color='blue', linewidth=2)
+    ax2.plot(time_arr, I_arr, label='I-Anteil (Ausgleich)', color='green', linewidth=2)
+    ax2.plot(time_arr, D_arr, label='D-Anteil (Dämpfer)', color='orange', linewidth=2)
+    ax2.set_ylabel('Kraft / Moment [N]')
+    ax2.grid(True, linestyle='--', alpha=0.7)
+    ax2.legend(loc='upper right')
+    ax2.set_title('PID-Regleranteile (Norm der Vektoren)')
+
+    # --- Plot 3: Summe F_virtual (P + I + D) ---
+    F_arr = P_arr + I_arr + D_arr
+    ax3 = axes[2]
+    ax3.plot(time_arr, F_arr, label='F_virtual (P + I + D)', color='purple', linewidth=2)
+    ax3.plot(time_arr, P_arr, label='P', color='blue', linestyle='--', alpha=0.5)
+    ax3.plot(time_arr, I_arr, label='I', color='green', linestyle='--', alpha=0.5)
+    ax3.plot(time_arr, D_arr, label='D', color='orange', linestyle='--', alpha=0.5)
+    ax3.set_xlabel('Zeit [s]')
+    ax3.set_ylabel('Kraft [N]')
+    ax3.grid(True, linestyle='--', alpha=0.7)
+    ax3.legend(loc='upper right')
+    ax3.set_title('Gesamte virtuelle Kraft = P + I + D')
+
+    plt.tight_layout()
+    dateiname = "output/" + dateiname
+    plt.savefig(dateiname, dpi=300)
+    print(f"\n[Erfolg] PID-Analyse gespeichert als '{dateiname}'")
     plt.close()

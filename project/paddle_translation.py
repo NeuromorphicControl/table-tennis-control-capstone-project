@@ -6,12 +6,12 @@ from utils import (
     get_robot_workspace_mujoco, 
     print_workspace_analysis,
     create_telemetry_storage,
-    plot_robot_telemetry
+    plot_robot_telemetry,
+    plot_pid_controller_analysis
 )
 
 # Setup Analyse
 telemetry = create_telemetry_storage()
-sim_time = 0.0
 
 
 # 1. Modell laden
@@ -25,6 +25,11 @@ body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, 'paddle')
 # 3. Tuning-Parameter
 Kp = np.array([100.0, 100.0, 100.0])  # Proportional
 Kd = np.array([10.0, 10.0, 10.0])    # Derivativ
+Ki = np.array([5.0, 5.0, 5.0])      # Integral
+
+# Integral Speicher
+integral_error = np.zeros(3)            
+integral_limit = 10.0  
 
 # 4. Deine gewünschte Zielposition im Raum [X, Y, Z]
 x_target = np.array([-0.000, -1.504, 1.010])  #[0.8, -1.0, 0.6]
@@ -63,7 +68,16 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # --- 2. VIRTUELLE KRAFT BERECHNEN (Arbeitsraum-PD) ---
         error_pos = x_target - x_curr      # (3,)
         error_vel = x_dot_target - x_dot_curr  # (3,)
-        F_virtual = Kp * error_pos + Kd * error_vel  # (3,)
+        
+        P_force = Kp * error_pos
+        D_force = Kd * error_vel
+        dt = model.opt.timestep  # Zeitschritt der Simulation
+        integral_error += error_pos * dt
+        integral_error = np.clip(integral_error, -integral_limit, integral_limit) #Begrenze den akkumulierten Fehler, damit das Integral nicht explodiert
+        I_force = Ki * integral_error
+        
+        # --- GESAMTE VIRTUELLE KRAFT ---
+        F_virtual = P_force + I_force + D_force  # (3,)
 
         # --- 3. KRAFT IN MOMENTE UMRECHNEN (Transponierte Jacobi) ---
         tau_task = jac_p.T @ F_virtual 
@@ -86,11 +100,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # --- 📈 DATEN FÜR DIE ANALYSE SPEICHERN ---
         abstand = np.linalg.norm(error_pos)
         
-        telemetry["time"].append(sim_time)
+        telemetry["time"].append(data.time)
         telemetry["distance"].append(abstand)
         telemetry["ctrl_signals"].append(np.copy(data.ctrl))
         telemetry["grav_comp"].append(np.copy(tau_gravity))
         telemetry["task_torques"].append(np.copy(tau_task))
+        telemetry["P_norm"].append(np.linalg.norm(P_force))
+        telemetry["I_norm"].append(np.linalg.norm(I_force))
+        telemetry["D_norm"].append(np.linalg.norm(D_force))
 
         # Schritt in der Physik-Engine ausführen
         mujoco.mj_step(model, data)
@@ -107,3 +124,5 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 # NACHDEM DER VIEWER GESCHLOSSEN WURDE: Diagramm anzeigen
 print("\n[Info] Simulation beendet. Generiere Plots zur Fehleranalyse...")
 plot_robot_telemetry(telemetry)
+print("\n[Info] Simulation beendet. Generiere PID-Analyse...")
+plot_pid_controller_analysis(telemetry)
