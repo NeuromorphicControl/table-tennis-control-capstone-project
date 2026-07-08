@@ -56,7 +56,7 @@ model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 # Initialbedingungen
-data.qpos[:] = [0.05, 0, 1.0, 1, 0, 0, 0]
+data.qpos[:] = [0.05, 0, 1.78, 1, 0, 0, 0]
 data.qvel[:] = 0
 
 # Simulation: 3 Sekunden sollten reichen
