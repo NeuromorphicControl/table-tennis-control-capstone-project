@@ -5,6 +5,14 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 import time
+from pathlib import Path
+from datetime import datetime
+
+output_dir = Path("output/bouncesim")
+output_dir.mkdir(parents=True, exist_ok=True)
+zeitstempel = datetime.now().strftime("%Y-%m-%d_%H-%M")
+plot_path = output_dir / f"bounce_plot{zeitstempel}.png"
+LIVE_VIEWER = False
 
 xml = """
 <mujoco model="tabletennis">
@@ -98,38 +106,38 @@ plt.grid(True, linestyle='--', alpha=0.6)
 plt.axhline(y=0.78, color='r', linestyle=':', label='Tischhöhe (0.78 m)')
 plt.legend()
 plt.tight_layout()
-plt.savefig("bounce_plot.png", dpi=150)
-print("✅ Plot gespeichert als 'bounce_plot.png'")
+plt.savefig(plot_path, dpi=150)
+print(f"✅ Plot gespeichert unter {plot_path}")
 
 
 
 # -----------------
 # LIVE VIEWER
 # -----------------
+if LIVE_VIEWER:
+  model_view = mujoco.MjModel.from_xml_string(xml)
+  data_view = mujoco.MjData(model_view)
+  data_view.qpos[:] = [0.05, 0, 1.78, 1, 0, 0, 0]
+  data_view.qvel[:] = 0
 
-model_view = mujoco.MjModel.from_xml_string(xml)
-data_view = mujoco.MjData(model_view)
-data_view.qpos[:] = [0.05, 0, 1.78, 1, 0, 0, 0]
-data_view.qvel[:] = 0
+  # Viewer starten
+  with mujoco.viewer.launch_passive(model_view, data_view) as viewer:
+      # Kamera etwas ausrichten
+      viewer.cam.lookat[:] = [0, 0, 0.8]
+      viewer.cam.distance = 2.5
+      viewer.cam.azimuth = -45
+      viewer.cam.elevation = 25
 
-# Viewer starten
-with mujoco.viewer.launch_passive(model_view, data_view) as viewer:
-    # Kamera etwas ausrichten
-    viewer.cam.lookat[:] = [0, 0, 0.8]
-    viewer.cam.distance = 2.5
-    viewer.cam.azimuth = -45
-    viewer.cam.elevation = 25
+      while viewer.is_running():
+          step_start = time.time()
 
-    while viewer.is_running():
-        step_start = time.time()
+          # Einen Simulationsschritt ausführen
+          mujoco.mj_step(model_view, data_view)
 
-        # Einen Simulationsschritt ausführen
-        mujoco.mj_step(model_view, data_view)
+          # Viewer aktualisieren
+          viewer.sync()
 
-        # Viewer aktualisieren
-        viewer.sync()
-
-        # Echtzeit-Timing (so schnell wie möglich, aber nicht schneller als der Timestep)
-        time_until_next_step = model_view.opt.timestep - (time.time() - step_start)
-        if time_until_next_step > 0:
-            time.sleep(time_until_next_step)
+          # Echtzeit-Timing (so schnell wie möglich, aber nicht schneller als der Timestep)
+          time_until_next_step = model_view.opt.timestep - (time.time() - step_start)
+          if time_until_next_step > 0:
+              time.sleep(time_until_next_step)
