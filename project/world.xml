@@ -2,11 +2,11 @@
   <compiler meshdir="assets" texturedir="assets"/>
   <statistic extent="1.5" meansize=".05"/>
 
-  <!-- <default>
-    <geom solimp="0.99 0.99 0.01" solref="0.005 0.5"/>
-  </default> -->
+  <default>
+    <geom solref="0.01 0.01"/>
+  </default>
 
-  <option timestep="0.005" jacobian="auto"/>
+  <option timestep="1e-5" jacobian="auto" cone="elliptic" integrator="implicitfast" gravity="0 0 -9.81"/>
 
   <visual>
     <rgba haze="0.15 0.25 0.35 1"/>
