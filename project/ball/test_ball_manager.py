@@ -4,8 +4,7 @@ import os
 import gc
 from ballmanager import BallManager
 
-    """Dieses Script wurde weitestgehend von AI gebaut, um die ballmanager klasse zu testen.
-    """
+#Dieses Script wurde weitestgehend von AI gebaut, um die ballmanager klasse zu testen.
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))

@@ -4,7 +4,7 @@
 
   <default>
   <!-- <geom solref="0.01 0.025"/> -->
-  <pair solref="0.01 0.025"/> 
+  <pair solref="0.01 0.03"/> 
   </default>
 
   <option timestep="1e-5" jacobian="auto" cone="elliptic" integrator="implicitfast" gravity="0 0 -9.81"/>

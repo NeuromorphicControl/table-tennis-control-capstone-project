@@ -80,7 +80,7 @@ class BallManager:
             "vel": vel
         })
 
-    def remove_last_ball_01(self) -> bool:
+    def remove_last_ball(self) -> bool:
             if not self._balls:
                 print("Kein Ball vorhanden.")
                 return False
@@ -96,11 +96,11 @@ class BallManager:
             except Exception as e:
                 print(f"Fehler beim Deaktivieren des Balls: {e}")
             # Geometrie unsichtbar machen
-            geom = ball_info["geom"]
-            geom.rgba = [0.0, 0.0, 0.0, 0.0]   # transparent
+            # geom = ball_info["geom"]
+            # geom.rgba = [0.0, 0.0, 0.0, 0.0]   # transparent
             return True
 
-    def remove_last_ball(self) -> bool:
+    def remove_last_ball_01(self) -> bool:
         if not self._balls:
             print("Kein Ball vorhanden.")
             return False
