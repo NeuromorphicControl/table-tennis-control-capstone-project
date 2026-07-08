@@ -12,13 +12,11 @@ MjModel = getattr(mujoco, "MjModel")
 MjData = getattr(mujoco, "MjData")
 mj_step = getattr(mujoco, "mj_step")
 
-
-
 # List of demo Poses for the robot arm, each defined by a target position and rotation (in Euler angles)
 demo_poses = [
     {
-        "position": np.array([0.0, 0.6, 0.25]),
-        "rotation": np.array([np.pi / 4, 0.0, 0.0]),  # Euler angles (roll, pitch, yaw)
+        "position": np.array([0.0, 0.6, 0.25]),      # Target position in 3D space (x, y, z)
+        "rotation": np.array([np.pi / 4, 0.0, 0.0]), # Euler angles (roll, pitch, yaw)
     },
     {
         "position": np.array([0.4, -0.2, 0.0]),
@@ -38,18 +36,25 @@ if __name__ == "__main__":
 
     # Create a RobotArm instance with the loaded data and joint names
     joint_names = ["base_x", "base_y", "rotator1", "rotator2", "arm1", "arm2", "paddle_rotator", "paddle"]
-    robot_arm = RobotArm(model, data, joint_names, site_name="paddle_site", return_home=True, base_pos=(0, 0), dt=model.opt.timestep)
+    robot_arm = RobotArm(model, data, joint_names, target_site_name="paddle_site", base_site_name="base_site", base_offset=(0, 0), dt=model.opt.timestep)
 
-    robot_arm.set_task_gains(
+    # Set PID gains for position and orientation control of the robot arm
+    robot_arm.arm_controller.set_gains(
             position_kp=[120.0, 120.0, 120.0],
             position_kd=[38.0, 38.0, 38.0],
             orientation_kp=[120.0, 120.0, 120.0],
             orientation_kd=[38.0, 38.0, 38.0],
-            null_kp=0.0,
-            null_kd=12, # Damping for the base joints to prevent oscillations
     )
 
-    initial_pose = robot_arm.get_site_pose()
+    # Set PID gains for the base controller of the robot arm
+    robot_arm.base_controller.set_gains(
+            kp=[0, 0],
+            ki=[0.0, 0.0],
+            kd=[38.0, 38.0],
+    )
+
+    # Get the initial pose of the robot arm's target site (paddle) to use as a reference for demo poses
+    initial_pose = robot_arm.get_target_site_pose()
 
     # Store the initial pose to reset the robot arm to its starting position after each demo pose
     initial_pose = {
@@ -59,7 +64,7 @@ if __name__ == "__main__":
 
     robot_arm.set_target_pose(
             initial_pose["position"],
-            Rotation.from_matrix(initial_pose["rotation"]).as_euler("xyz"),
+            initial_pose["rotation"],
     )
 
     counter = 0
@@ -76,8 +81,9 @@ if __name__ == "__main__":
                 counter = 0
                 robot_arm.set_target_pose(
                     initial_pose["position"] + demo_poses[index]["position"],
-                    Rotation.from_matrix(initial_pose["rotation"]).as_euler("xyz") + demo_poses[index]["rotation"],
+                    initial_pose["rotation"] @ Rotation.from_euler("xyz", demo_poses[index]["rotation"]).as_matrix(),
                 )
+                print(f"Switching to demo pose {index + 1}: Position {demo_poses[index]['position']}, Rotation {demo_poses[index]['rotation']}")
             counter += 1
 
             robot_arm.update()

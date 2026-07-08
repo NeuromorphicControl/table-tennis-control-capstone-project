@@ -1,53 +1,53 @@
-from .operational_space import OperationalSpaceController
+import numpy as np
+
+from .controller import OperationalSpaceController
+from .controller import PIDController
 
 class RobotArm:
-    def __init__(self, model, data, joint_names, site_name="paddle_site", return_home=False, base_pos=None, u_max=100, dt=0.01):
-        self.controller = OperationalSpaceController(
+    def __init__(self, model, data, joint_names, target_site_name="paddle_site", base_site_name="base_site", base_offset=None, u_max=100, dt=0.01):
+        self.arm_controller = OperationalSpaceController(
             model=model,
             data=data,
-            joint_names=joint_names,
-            site_name=site_name,
-            return_home=return_home,
-            base_pos=base_pos,
+            joint_names=joint_names[2:],
+            target_site_name=target_site_name,
             u_max=u_max,
             dt=dt,
         )
 
-        self.data = data
-        self.model = model
-        self.joint_names = joint_names
-        self.return_home = return_home
-        self.base_pos = base_pos or (0, 0)
-        self.u_max = u_max
+        self.base_controller = PIDController(
+            model=model,
+            data=data,
+            joint_names=joint_names[:2],
+            target_site_name=base_site_name,
+            u_max=u_max,
+            dt=dt,
+        )
+        if base_offset is not None and len(base_offset) != 2:
+            raise ValueError("base_offset must be a 3D vector (x, y).")
+        elif base_offset is None:
+            base_offset = np.zeros(2, dtype=float)
+        
+        # Append 3rd dimension (z) to base_offset to make it a 3D vector
+        self.base_offset = np.array([base_offset[0], base_offset[1], 0.0], dtype=float)
 
-        self.joint_ids = self.controller.qpos_ids
-        self.motor_ids = self.controller.motor_ids
-        self.target_position = self.controller.target_position
-        self.target_rotation = self.controller.target_rotation
-    
-
-    def set_task_gains(self, position_kp=None, position_kd=None, orientation_kp=None, orientation_kd=None, null_kp=None, null_kd=None):
-        self.controller.set_task_gains(position_kp, position_kd, orientation_kp, orientation_kd, null_kp, null_kd)
 
     def set_target_pose(self, position, rotation):
-        self.controller.set_target_pose(position, rotation)
-        self.target_position = self.controller.target_position
-        self.target_rotation = self.controller.target_rotation
+        self.arm_controller.set_target_pose(position, rotation)
+        self.base_controller.set_target_position(position - self.base_offset)
 
     def set_target_position(self, position):
-        self.controller.set_target_position(position)
-        self.target_position = self.controller.target_position
+        self.arm_controller.set_target_position(position)
+        self.base_controller.set_target_position(position - self.base_offset)
 
     def set_target_rotation(self, rotation):
-        self.controller.set_target_rotation(rotation)
-        self.target_rotation = self.controller.target_rotation
+        self.arm_controller.set_target_rotation(rotation)
 
-    def set_base_position(self, base_pos):
-        self.controller.set_base_position(base_pos)
-        self.base_pos = self.controller.base_pos
 
-    def get_site_pose(self):
-        return self.controller.get_site_pose()
-    
+    def get_target_site_pose(self):
+        return self.arm_controller.get_site_pose()
+
     def update(self):
-        return self.controller.update()
+        data = []
+        data.append(self.base_controller.update())
+        data.append(self.arm_controller.update())
+        return data

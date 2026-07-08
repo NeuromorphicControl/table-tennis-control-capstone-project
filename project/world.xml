@@ -55,6 +55,7 @@
     <body name="base" pos="0 -3.255 0.45" euler="0 0 0">
       <joint type="slide" axis="0 1 0" name="base_x" range="-1.8 1.8" damping="2"/>
       <joint type="slide" axis="1 0 0" name="base_y" range="-1.8 1.8" damping="2"/>
+      <site name="base_site" pos="0 0 0" size="0.01" rgba="1 0 0 1"/>
       <geom type="mesh" mesh="arm-base" pos="0 0.95 0.42" euler="0 0 180" rgba=".15 .15 .15 1" mass="12.5" contype="0" conaffinity="0"/>
 
       <!-- Camera -->
