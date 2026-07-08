@@ -3,6 +3,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import mujoco
+import mujoco.viewer
+import time
 
 xml = """
 <mujoco model="tabletennis">
@@ -23,8 +25,8 @@ xml = """
   </asset>
 
   <default>
-    <!-- Weicherer Kontakt: 10 ms Zeitkonstante, 0.001 Dämpfung -->
-    <pair solref="0.01 0.001"/>
+    <!-- Weicherer Kontakt: 10 ms Zeitkonstante, 0.01 Dämpfung -->
+    <pair solref="0.01 0.01"/>
   </default>
 
   <worldbody>
@@ -60,7 +62,7 @@ data.qpos[:] = [0.05, 0, 1.78, 1, 0, 0, 0]
 data.qvel[:] = 0
 
 # Simulation: 3 Sekunden sollten reichen
-duration = 3.0
+duration = 5.0
 n_steps = int(duration / model.opt.timestep)
 times = np.zeros(n_steps)
 heights = np.zeros(n_steps)
@@ -74,8 +76,8 @@ for i in range(n_steps):
     heights[i] = data.xpos[ball_body_id][2]
     velocities[i] = data.qvel[2]
 
-    # Ausgabe alle 5000 Schritte
-    if i % 5000 == 0:
+    # Debug-Auskunft
+    if i % 50000 == 0:
         print(f"t={data.time:.4f}s  h={heights[i]:.6f}m  v={velocities[i]:.3f}m/s")
 
 # Nach der Simulation prüfen, ob der Ball auf dem Tisch liegt
@@ -98,3 +100,36 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("bounce_plot.png", dpi=150)
 print("✅ Plot gespeichert als 'bounce_plot.png'")
+
+
+
+# -----------------
+# LIVE VIEWER
+# -----------------
+
+model_view = mujoco.MjModel.from_xml_string(xml)
+data_view = mujoco.MjData(model_view)
+data_view.qpos[:] = [0.05, 0, 1.78, 1, 0, 0, 0]
+data_view.qvel[:] = 0
+
+# Viewer starten
+with mujoco.viewer.launch_passive(model_view, data_view) as viewer:
+    # Kamera etwas ausrichten
+    viewer.cam.lookat[:] = [0, 0, 0.8]
+    viewer.cam.distance = 2.5
+    viewer.cam.azimuth = -45
+    viewer.cam.elevation = 25
+
+    while viewer.is_running():
+        step_start = time.time()
+
+        # Einen Simulationsschritt ausführen
+        mujoco.mj_step(model_view, data_view)
+
+        # Viewer aktualisieren
+        viewer.sync()
+
+        # Echtzeit-Timing (so schnell wie möglich, aber nicht schneller als der Timestep)
+        time_until_next_step = model_view.opt.timestep - (time.time() - step_start)
+        if time_until_next_step > 0:
+            time.sleep(time_until_next_step)
