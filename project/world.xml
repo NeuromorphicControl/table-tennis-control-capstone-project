@@ -2,11 +2,11 @@
   <compiler meshdir="assets" texturedir="assets"/>
   <statistic extent="1.5" meansize=".05"/>
 
-  <!-- <default>
-    <geom solimp="0.99 0.99 0.01" solref="0.005 0.5"/>
-  </default> -->
+  <default>
+    <pair solref="-35000 -15.75" solimp="0.95 0.99 0.001 0.5 2"/> 
+  </default>
 
-  <option timestep="0.0001" jacobian="auto" gravity="0 0 -9.81"/>
+  <option timestep="0.001" jacobian="auto" tolerance="1e-8" gravity="0 0 -9.81"/>
 
   <visual>
     <global offwidth="1920" offheight="1080" azimuth="90" elevation="-45"/>
@@ -53,7 +53,7 @@
       <geom name="table_collider_h" type="box" size="0.7625 1.37 0.025" pos="0 0 0.735" rgba="0 0 0 0"/>
     </body>
 
-    <body name="ball" pos="0 2 0.025" euler="0 0 0">
+    <body name="ball" pos="0 2 1" euler="0 0 0">
       <geom name="ball_geom" type="sphere" size="0.02" rgba="1 0.5 0 1" mass="0.00167"/>
       <joint type="free" name="ball_free" damping="0.0"/>
     </body>

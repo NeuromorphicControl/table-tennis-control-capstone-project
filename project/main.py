@@ -65,6 +65,8 @@ if __name__ == "__main__":
     counter = 0
     index = 0
 
+    # ball_height = []
+
     with mujoco.viewer.launch_passive(model, data) as viewer:
         while viewer.is_running():
             step_start = time.time()
@@ -80,6 +82,11 @@ if __name__ == "__main__":
                 )
             counter += 1
 
+            # # Log ball Postion
+            # ball_height.append(data.qpos[model.joint("ball_free").id:model.joint("ball_free").id+3][2])  # Store the height of the ball
+            # if len(ball_height) > 10000:  # Limit the length of the ball_height list to avoid excessive memory usage
+            #     ball_height.pop(0)
+
             robot_arm.update()
             mj_step(model, data)
 
@@ -90,3 +97,16 @@ if __name__ == "__main__":
             time_until_next_step = model.opt.timestep - (time.time() - step_start)
             if time_until_next_step > 0:
                 time.sleep(time_until_next_step)
+        
+    # # Plot ball height over time after the simulation ends
+    # import matplotlib.pyplot as plt
+
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(np.arange(len(ball_height)) * model.opt.timestep, ball_height, label='Ball Height', color='blue')
+    # plt.title('Ball Height Over Time')
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Height (m)')
+    # plt.axhline(0, color='black', lw=0.5)  # Ground line
+    # plt.legend()
+    # plt.grid()
+    # plt.show()
