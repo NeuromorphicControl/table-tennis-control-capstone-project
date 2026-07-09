@@ -4,7 +4,7 @@ import numpy as np
 import mujoco
 
 from mujocohelper import Renderer
-from robot.robot import RobotArm
+from world.robot import RobotArm
 
 from scipy.spatial.transform import Rotation
 

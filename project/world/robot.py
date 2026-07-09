@@ -1,4 +1,4 @@
-from .operational_space import OperationalSpaceController
+from ..control import OperationalSpaceController
 
 class RobotArm:
     def __init__(self, model, data, joint_names, site_name="paddle_site", return_home=False, base_pos=None, u_max=100, dt=0.01):
