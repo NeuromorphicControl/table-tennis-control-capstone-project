@@ -6,9 +6,10 @@
     <geom solimp="0.99 0.99 0.01" solref="0.005 0.5"/>
   </default> -->
 
-  <option timestep="0.005" jacobian="auto"/>
+  <option timestep="0.0001" jacobian="auto" gravity="0 0 -9.81"/>
 
   <visual>
+    <global offwidth="1920" offheight="1080" azimuth="90" elevation="-45"/>
     <rgba haze="0.15 0.25 0.35 1"/>
     <quality shadowsize="4096"/>
     <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15" zfar="40" haze="0.3"/>
@@ -38,6 +39,7 @@
 
     <!-- Cameras -->
     <camera name="top_down" pos="0 0 10" euler="0 0 90"/>
+    <camera name="render_cam" pos="-4.100 -2.081 1.897" xyaxes="0.281 -0.960 -0.000 0.217 0.064 0.974"/>
 
     <!-- Ground -->
     <geom name="ground" type="plane" size="0 0 1" pos="0 0 0" quat="1 0 0 0" material="matplane" condim="1"/>
@@ -47,8 +49,13 @@
       <geom type="mesh" mesh="table" pos="0 0 0.01" euler="0 0 0" contype="0" conaffinity="0"/>
 
       <!-- Add geoms for collision detection -->
-      <geom type="box" size="0.9225 0.0025 0.07625" pos="0 0 0.83625" rgba="0 0 0 0"/>
-      <geom type="box" size="0.7625 1.37 0.025" pos="0 0 0.735" rgba="0 0 0 0"/>
+      <geom name="table_collider_v" type="box" size="0.9225 0.0025 0.07625" pos="0 0 0.83625" rgba="0 0 0 0"/>
+      <geom name="table_collider_h" type="box" size="0.7625 1.37 0.025" pos="0 0 0.735" rgba="0 0 0 0"/>
+    </body>
+
+    <body name="ball" pos="0 2 0.025" euler="0 0 0">
+      <geom name="ball_geom" type="sphere" size="0.02" rgba="1 0.5 0 1" mass="0.00167"/>
+      <joint type="free" name="ball_free" damping="0.0"/>
     </body>
 
     <!-- Arm Base -->
@@ -98,6 +105,15 @@
       </body>
     </body>
   </worldbody>
+
+
+  <contact>
+    <pair geom1="ball_geom" geom2="table_collider_v"/>
+    <pair geom1="ball_geom" geom2="table_collider_h"/>
+    <pair geom1="ball_geom" geom2="ground"/>
+    <!-- <pair geom1="ball_geom" geom2="paddle"/> -->
+  </contact>
+
 
   <actuator>
     <motor name="base_x" joint="base_x"/>
