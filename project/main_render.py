@@ -1,13 +1,9 @@
-import os
 from pathlib import Path
-import time
 
 import numpy as np
 import mujoco
-import mujoco.viewer
-import tqdm
 
-from renderer import Renderer
+from mujocohelper import Renderer
 from robot.robot import RobotArm
 
 from scipy.spatial.transform import Rotation
