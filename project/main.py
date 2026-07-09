@@ -4,8 +4,8 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 
-from world.ball import Ball
-from world.robot import RobotArm
+from world import Ball
+from robot import RobotArm
 
 from scipy.spatial.transform import Rotation
 
