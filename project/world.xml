@@ -58,6 +58,9 @@
       <joint type="free" name="ball_free" damping="0.0"/>
     </body>
 
+    <!-- Target Position Site -->
+    <site name="target" pos="0 0 2" size="0.05" rgba="0 1 0 1"/>
+
     <!-- Arm Base -->
     <body name="base" pos="0 -3.255 0.45" euler="0 0 0">
       <joint type="slide" axis="0 1 0" name="base_x" range="-1.8 1.8" damping="2"/>
@@ -95,7 +98,7 @@
                 <!-- Paddle -->
                 <body name="paddle" pos="0 0.065 0.035" euler="-90 0 -90">
                   <joint type="hinge" axis="0 0 1" name="paddle" damping="0.01"/>
-                  <geom type="mesh" mesh="paddle" pos="-0.094 0 0" euler="90 0 0" rgba="1 .4 .4 1" mass="0.150"/>
+                  <geom name="paddle" type="mesh" mesh="paddle" pos="-0.094 0 0" euler="90 0 0" rgba="1 .4 .4 1" mass="0.150"/>
                   <site name="paddle_site" pos="0 0 0.1855" euler="0 180 0" size="0.015" rgba="1 0 0 1"/>
                 </body>
               </body>
@@ -111,7 +114,7 @@
     <pair geom1="ball_geom" geom2="table_collider_v"/>
     <pair geom1="ball_geom" geom2="table_collider_h"/>
     <pair geom1="ball_geom" geom2="ground"/>
-    <!-- <pair geom1="ball_geom" geom2="paddle"/> -->
+    <pair geom1="ball_geom" geom2="paddle"/>
   </contact>
 
 

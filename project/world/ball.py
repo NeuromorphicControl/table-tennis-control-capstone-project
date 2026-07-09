@@ -22,6 +22,9 @@ class Ball:
 
         self.ball_joint_id = model.joint(ball_joint_name).id
 
+        self.last_position = self.get_position()
+        self.velocity = self._calculate_velocity()
+
     
     def get_position(self) -> np.ndarray:
         """Get the current position of the ball.
@@ -30,7 +33,7 @@ class Ball:
             np.ndarray: The current position of the ball as a 3D coordinate (x, y, z).
         """
         return self.data.qpos[self.ball_joint_id:self.ball_joint_id + 3]
-    
+
 
     def get_velocity(self) -> np.ndarray:
         """Get the current velocity of the ball.
@@ -38,7 +41,7 @@ class Ball:
         Returns:
             np.ndarray: The current velocity of the ball as a 3D vector (vx, vy, vz).
         """
-        return self.data.qvel[self.ball_joint_id:self.ball_joint_id + 3]
+        return self.velocity
     
 
     def set_position(self, position: tuple | np.ndarray) -> None:
@@ -85,5 +88,40 @@ class Ball:
         Raises:
             ValueError: If the position is not a 3D coordinate.
         """
+        self.last_position = np.array(position)
+
         self.set_position(position)
         self.set_velocity((0.0, 0.0, 0.0))
+    
+
+    def _calculate_velocity(self, dt: float | None = None) -> np.ndarray:
+        """Calculate the current velocity of the ball based on its position change over time.
+
+        Args:
+            dt (float | None): The time step over which to calculate the velocity. If None, the model's timestep will be used.
+
+        Returns:
+            np.ndarray: The current velocity of the ball as a 3D vector (vx, vy, vz).
+
+        Raises:
+            ValueError: If the time step (dt) is zero, which would lead to division by zero.
+        """
+        if dt is None:
+            dt = self.model.opt.timestep  # Use the model's timestep if dt is not provided
+
+        if dt == 0:
+            raise ValueError("Time step (dt) cannot be zero.")
+
+        current_position = self.get_position()
+        velocity = (current_position - self.last_position) / dt
+        self.last_position = current_position.copy()
+        return velocity
+
+
+    def update(self, dt: float | None = None) -> None:
+        """Update the ball's state.
+
+        Args:
+            dt (float | None): The time step over which to update the ball's state. If None, the model's timestep will be used.
+        """
+        self.velocity = self._calculate_velocity(dt)

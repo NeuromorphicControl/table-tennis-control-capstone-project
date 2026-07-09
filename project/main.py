@@ -1,3 +1,4 @@
+from pathlib import Path
 import time
 
 import numpy as np
@@ -7,30 +8,27 @@ import mujoco.viewer
 from world import Ball
 from robot import RobotArm
 
+from predict import calculate_path, calculate_path_numba, calculate_optimal_target_position
+
 from scipy.spatial.transform import Rotation
 
 MjModel = getattr(mujoco, "MjModel")
 MjData = getattr(mujoco, "MjData")
 mj_step = getattr(mujoco, "mj_step")
 
+def key_callback(keycode):
+    """Callback function for key events in the MuJoCo viewer.
 
-
-# List of demo Poses for the robot arm, each defined by a target position and rotation (in Euler angles)
-demo_poses = [
-    {
-        "position": np.array([0.0, 0.6, 0.25]),
-        "rotation": np.array([np.pi / 4, 0.0, 0.0]),  # Euler angles (roll, pitch, yaw)
-    },
-    {
-        "position": np.array([0.4, -0.2, 0.0]),
-        "rotation": np.array([np.pi / 4, 0.0, np.pi / 4]),  # Euler angles (roll, pitch, yaw)
-    },
-    {
-        "position": np.array([-0.4, -0.2, 0.5]),
-        "rotation": np.array([0.0, np.pi / 4, np.pi/2]),  # Euler angles (roll, pitch, yaw)
-    },
-]
-
+    Args:
+        keycode (int): The keycode of the pressed key.
+    """
+    if keycode == 32:
+        # Reset the ball's position and velocity when the Space key is pressed
+        ball.reset_position((0, 0, 2))
+        
+        vel = (0, -3, 2)
+        vel += np.random.uniform(-0.5, 0.5, size=3)
+        ball.set_velocity(vel)
 
 if __name__ == "__main__":
     # Load the MuJoCo model and create a data object
@@ -42,15 +40,15 @@ if __name__ == "__main__":
 
     # Create a RobotArm instance with the loaded data and joint names
     joint_names = ["base_x", "base_y", "rotator1", "rotator2", "arm1", "arm2", "paddle_rotator", "paddle"]
-    robot_arm = RobotArm(model, data, joint_names, site_name="paddle_site", return_home=True, base_pos=(0, 0), dt=model.opt.timestep)
+    robot_arm = RobotArm(model, data, joint_names, site_name="paddle_site", return_home=True, base_pos=(0.2, 0), dt=model.opt.timestep)
 
     robot_arm.set_task_gains(
-            position_kp=[120.0, 120.0, 120.0],
-            position_kd=[38.0, 38.0, 38.0],
-            orientation_kp=[120.0, 120.0, 120.0],
-            orientation_kd=[38.0, 38.0, 38.0],
-            null_kp=0.0,
-            null_kd=12, # Damping for the base joints to prevent oscillations
+            position_kp=[300.0, 300.0, 300.0],
+            position_kd=[29.6, 29.6, 29.6],
+            orientation_kp=[680.0, 680.0, 680.0],
+            orientation_kd=[23.0, 23.0, 23.0],
+            null_kp=80.0,
+            null_kd=60.0, # Damping for the base joints to prevent oscillations
     )
 
     initial_pose = robot_arm.get_site_pose()
@@ -61,31 +59,66 @@ if __name__ == "__main__":
         "rotation": initial_pose["rotation"].copy(),
     }
 
+    # TODO: Write method to check working area of the robot arm
+    working_x_min, working_x_max = initial_pose["position"][0] - 0.8, initial_pose["position"][0] + 0.8
+    working_y_min, working_y_max = initial_pose["position"][1] - 0.8, initial_pose["position"][1] + 0.8
+    working_z_min, working_z_max = 0.4, 1.5
+
     robot_arm.set_target_pose(
             initial_pose["position"],
             Rotation.from_matrix(initial_pose["rotation"]).as_euler("xyz"),
     )
 
-    counter = 0
-    index = 0
+    # TODO: Move target site movement to a separate function that can be called from the main loop
+    data.site("target").xpos = initial_pose["position"]
 
-    with mujoco.viewer.launch_passive(model, data) as viewer:
+    # Set the ball to its initial position and velocity
+    ball.reset_position((0, 0, 2))
+
+    vel = (0, -3, 2)
+    vel += np.random.uniform(-0.5, 0.5, size=3)
+    ball.set_velocity(vel)
+
+    state = 0
+
+    tolerance = 2  # Tolerance for considering the ball to be at the target position
+
+    with mujoco.viewer.launch_passive(model, data, key_callback=key_callback) as viewer:
         while viewer.is_running():
             step_start = time.time()
 
-            if counter >= 10 / model.opt.timestep:  # 10 seconds in simulation time
-                index += 1
-                if index >= len(demo_poses):
-                    index = 0
-                counter = 0
+            ball.update()
+
+            # Set the position of the target site to match the final position of the balls trajectory prediction
+            times, positions, velocities = calculate_path_numba(ball, dt=0.005, max_iter=1000)
+            
+            # Reduce the number of positions to only those within the working area of the robot arm
+            valid_positions_mask = (np.logical_and.reduce((positions[:, 0] >= working_x_min, positions[:, 0] <= working_x_max,
+                                                        positions[:, 1] >= working_y_min, positions[:, 1] <= working_y_max,
+                                                        positions[:, 2] >= working_z_min, positions[:, 2] <= working_z_max)))
+            
+            # If there are valid positions and the robot arm is in the waiting state or the target position has changed, calculate the optimal target position and set the robot arm's target pose
+            if np.any(valid_positions_mask) and (state == 0 or np.linalg.norm(positions[valid_positions_mask][-1] - robot_arm.target_position) > tolerance):
+                target_position = calculate_optimal_target_position(positions[valid_positions_mask], robot_arm.target_position)
                 robot_arm.set_target_pose(
-                    initial_pose["position"] + demo_poses[index]["position"],
-                    Rotation.from_matrix(initial_pose["rotation"]).as_euler("xyz") + demo_poses[index]["rotation"],
+                    target_position,
+                    Rotation.from_matrix(initial_pose["rotation"]).as_euler("xyz"),
                 )
-            counter += 1
+                state = 1
+
+            # If there are no valid positions and the robot arm is in the moving state, reset the robot arm to its initial pose
+            elif not np.any(valid_positions_mask) and state == 1:
+                robot_arm.set_target_pose(
+                    initial_pose["position"],
+                    Rotation.from_matrix(initial_pose["rotation"]).as_euler("xyz"),
+                )
+                state = 0
 
             robot_arm.update()
             mj_step(model, data)
+
+            data.site("target").xpos = robot_arm.target_position
+            model.site_rgba[data.site("target").id] = np.array([0, 1, 0, 1]) if state == 1 else np.array([1, 0, 0, 1])
 
             # Pick up changes to the physics state, apply perturbations, update options from GUI.
             viewer.sync()
