@@ -1,2 +1,4 @@
 from .euler_predictor import calculate_path, calculate_path_numba
 from .interceptor import calculate_optimal_target_position
+
+from .trajectory_predictor import TrajectoryPredictor

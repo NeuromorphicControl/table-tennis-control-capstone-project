@@ -5,6 +5,7 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 
+from predict import TrajectoryPredictor
 from world import Ball
 from robot import RobotArm
 
@@ -79,6 +80,9 @@ if __name__ == "__main__":
     vel += np.random.uniform(-0.5, 0.5, size=3)
     ball.set_velocity(vel)
 
+    # Initialize TrajectoryPredictor with the ball instance
+    trajectory_predictor = TrajectoryPredictor(ball, dt=model.opt.timestep, t_max=10)
+
     state = 0
 
     tolerance = 2  # Tolerance for considering the ball to be at the target position
@@ -87,10 +91,12 @@ if __name__ == "__main__":
         while viewer.is_running():
             step_start = time.time()
 
+            # Update the ball's position and velocity, and recalculate the predicted trajectory
             ball.update()
+            trajectory_predictor.update()
 
-            # Set the position of the target site to match the final position of the balls trajectory prediction
-            times, positions, velocities = calculate_path_numba(ball, dt=0.005, max_iter=1000)
+            # Get the predicted trajectory of the ball
+            times, positions, velocities = trajectory_predictor.get_trajectory()
             
             # Reduce the number of positions to only those within the working area of the robot arm
             valid_positions_mask = (np.logical_and.reduce((positions[:, 0] >= working_x_min, positions[:, 0] <= working_x_max,
