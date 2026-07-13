@@ -69,18 +69,3 @@ def predict_velocity(times: np.ndarray, start_velocities: np.ndarray, gravity_ve
     
     velocities = start_velocities + gravity_vector * times[:, np.newaxis]
     return velocities
-
-
-def calc_paddle_normal(v_in: np.ndarray, v_out: np.ndarray) -> np.ndarray:
-    """Calculate the normal vector of the paddle based on the incoming and outgoing velocities of the ball.
-
-    Args:
-        v_in (np.ndarray): Array of shape (3,) containing the incoming velocity of the ball.
-        v_out (np.ndarray): Array of shape (3,) containing the outgoing velocity of the ball.
-
-    Returns:
-        np.ndarray: Array of shape (3,) containing the normal vector of the paddle.
-    """
-    n = v_out - v_in
-    n /= np.linalg.norm(n)
-    return n
