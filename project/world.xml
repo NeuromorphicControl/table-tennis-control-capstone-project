@@ -58,8 +58,11 @@
       <joint type="free" name="ball_free" damping="0.0"/>
     </body>
 
+    <!-- Target Pose Site -->
+    <site name="target_pose" size="0.05" rgba="0 1 0 1"/>
+
     <!-- Target Position Site -->
-    <site name="target" pos="0 0 2" size="0.05" rgba="0 1 0 1"/>
+    <site name="target" pos="0 0 1" size="0.05" rgba="0 0 1 1"/>
 
     <!-- Arm Base -->
     <body name="base" pos="0 -3.255 0.45" euler="0 0 0">
