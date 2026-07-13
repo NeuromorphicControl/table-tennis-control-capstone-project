@@ -79,4 +79,5 @@ class StrikePlanner:
             strike_angles (np.ndarray): Array of shape (n, 3) containing the strike angles for each position and velocity.
             velocities (np.ndarray): Array of shape (n, 3) containing the velocities of the ball at each time step.
         """
-        return (strike_angles - velocities) / np.linalg.norm(strike_angles - velocities, axis=1)
+        diff = strike_angles - velocities
+        return diff / np.linalg.norm(diff, axis=1, keepdims=True)
