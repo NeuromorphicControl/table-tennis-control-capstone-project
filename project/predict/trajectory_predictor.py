@@ -1,6 +1,6 @@
 import numpy as np
 
-from .physics import calc_time_to_floor, predict_position, predict_velocity
+from physics import calc_time_to_floor, predict_position, predict_velocity
 
 
 class TrajectoryPredictor:

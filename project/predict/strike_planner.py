@@ -1,6 +1,6 @@
 import numpy as np
 
-from .physics import STANDARD_GRAVITY
+from physics import STANDARD_GRAVITY
 
 class StrikePlanner:
     """Class to plan the strike of a ball towards a target position based on its predicted trajectory and the working area of the robot arm."""
@@ -48,6 +48,7 @@ class StrikePlanner:
             positions (np.ndarray): Array of shape (n, 3) containing the positions of the ball at each time step.
             velocities (np.ndarray): Array of shape (n, 3) containing the velocities of the ball at each time step.
         """
+
         d = self.target.get_position() - positions
         s = np.linalg.norm(velocities, axis=1)
 
@@ -56,6 +57,9 @@ class StrikePlanner:
         a = 0.25 * self.gravity_vector.dot(self.gravity_vector)
 
         discriminant = b**2 - 4*a*c
+
+        # Check for negative discriminant values and replace them with NaN to indicate that there are no real solutions
+        discriminant = np.where(discriminant >= 0, discriminant, np.nan)
 
         # Calculate the two possible flight times using the quadratic formula
         flight_time1 = (-b + np.sqrt(discriminant)) / (2*a)
@@ -73,24 +77,25 @@ class StrikePlanner:
         return np.column_stack((flight_times1, flight_times2))
     
 
-    def _calculate_strike_angle(self, flight_times: np.ndarray, positions: np.ndarray) -> np.ndarray:
+    def calculate_strike_angle(self, flight_times: np.ndarray, positions: np.ndarray) -> np.ndarray:
         """Calculate the strike angle for the ball to reach the target position from each of the given positions and speeds.
         
         Args:
             flight_times (np.ndarray): Array of shape (n,) containing the selected flight times for each position and velocity.
             positions (np.ndarray): Array of shape (n, 3) containing the positions of the ball at each time step.
+
+        Returns:
+            np.ndarray: Array of shape (n, 3) containing the strike angles for each position and velocity.
         """
         return (self.target.get_position() - positions -0.5 * self.gravity_vector[np.newaxis, :] * flight_times[:, np.newaxis]**2) / flight_times[:, np.newaxis]
     
 
-    def calculate_paddle_normal(self, flight_times: np.ndarray, positions: np.ndarray, velocities: np.ndarray) -> np.ndarray:
+    def calculate_paddle_normal(self, strike_angles: np.ndarray, velocities: np.ndarray) -> np.ndarray:
         """Calculate the paddle normal for the ball to reach the target position from each of the given positions and speeds.
         
         Args:
-            flight_times (np.ndarray): Array of shape (n,) containing the selected flight times for each position and velocity.
-            positions (np.ndarray): Array of shape (n, 3) containing the positions of the ball at each time step.
+            strike_angles (np.ndarray): Array of shape (n, 3) containing the strike angles for each position and velocity.
             velocities (np.ndarray): Array of shape (n, 3) containing the velocities of the ball at each time step.
         """
-        strike_angles = self._calculate_strike_angle(flight_times, positions)
         diff = strike_angles - velocities
         return diff / np.linalg.norm(diff, axis=1, keepdims=True)

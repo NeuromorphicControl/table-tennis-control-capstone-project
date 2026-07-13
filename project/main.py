@@ -6,6 +6,7 @@ import mujoco
 import mujoco.viewer
 
 from predict import TrajectoryPredictor, StrikePlanner
+from plotting import PlotManager, TrajectoryPlot
 from world import Ball, Target
 from robot import RobotArm
 
@@ -64,8 +65,6 @@ if __name__ == "__main__":
     working_y_min, working_y_max = initial_pose["position"][1] - 0.8, initial_pose["position"][1] + 0.8
     working_z_min, working_z_max = 0.4, 1.5
 
-    print(f"Working area bounds: x=({working_x_min}, {working_x_max}), y=({working_y_min}, {working_y_max}), z=({working_z_min}, {working_z_max})")
-
     robot_arm.set_target_pose(
             initial_pose["position"],
             Rotation.from_matrix(initial_pose["rotation"]).as_euler("xyz"),
@@ -84,12 +83,27 @@ if __name__ == "__main__":
     # Create working area bounds for the robot arm based on its initial position and a predefined range
     working_area_bounds = ((working_x_min, working_x_max), (working_y_min, working_y_max), (working_z_min, working_z_max))
 
+    # Initialize the PlotManager
+    plot_manager = PlotManager(update_interval=0.1)
+    plot_manager.add(TrajectoryPlot(ball, target, history_length=20))
+
+    plot_data = {
+        "dt": model.opt.timestep,
+        "gravity_vector": model.opt.gravity,
+        "p_start": None,
+        "v_start": None,
+        "p_paddle": None,
+        "v_paddle": None,
+        "pre_time": None,
+        "post_time": None,
+        "update_predictions": False,
+    }
+
     # Initialize the TrajectoryPredictor and StrikePlanner with the ball, target, and working area bounds
     trajectory_predictor = TrajectoryPredictor(ball, dt=model.opt.timestep, t_max=10)
     strike_planner = StrikePlanner(target, trajectory_predictor, working_area_bounds=working_area_bounds)
 
     state = 0
-
     tolerance = 0.01 # Tolerance for when to update the robot arm's target position based on the ball's predicted trajectory
 
     with mujoco.viewer.launch_passive(model, data, key_callback=key_callback) as viewer:
@@ -107,13 +121,14 @@ if __name__ == "__main__":
             flight_times = np.nanmax(strike_planner.calculate_flight_time(positions, velocities), axis=1)
 
             # Calculate the strike and paddle angles for the ball to reach the target position from each of the valid positions and velocities
-            paddle_normals = strike_planner.calculate_paddle_normal(flight_times, positions, velocities)
+            strike_angles = strike_planner.calculate_strike_angle(flight_times, positions)
+            paddle_normals = strike_planner.calculate_paddle_normal(strike_angles, velocities)
 
             # Calculate the shortest flight time for the ball to reach the target position
             total_flight_time = times + flight_times
 
             # Select the arm position and velocity corresponding to the shortest flight time
-            optimal_index = np.argmin(total_flight_time) if len(total_flight_time) > 0 else None
+            optimal_index = np.argmin(total_flight_time) if len(total_flight_time) > 0 and np.isfinite(np.max(total_flight_time)) else None
             
             optimal_flight_time = flight_times[optimal_index]
             optimal_position = positions[optimal_index]
@@ -123,9 +138,17 @@ if __name__ == "__main__":
             # A boolean to check if the ball is flying towards the robot arm
             ball_flying_towards_arm = ball.get_velocity()[1] < 0 if optimal_index is not None else False
 
+            plot_data["time"] = data.time
+
             # If there are valid positions, the ball flies towards the arm and the robot arm is in the waiting state or the target position has changed, calculate the optimal target position and set the robot arm's target pose
             if optimal_index is not None and ball_flying_towards_arm and (state == 0 or np.linalg.norm(optimal_position - robot_arm.target_position) > tolerance):
-                # Calculate new paddle orientation based on the optimal paddle normal and the current paddle orientation
+                # Save current ball position (as start for prediction) and velocity (as start for prediction) to the data dictionary
+                plot_data["p_start"] = ball.get_position().copy()
+                plot_data["v_start"] = ball.get_velocity().copy()
+                plot_data["p_paddle"] = optimal_position.copy()
+                plot_data["v_paddle"] = strike_angles[optimal_index].copy()
+                plot_data["pre_time"] = times[optimal_index]
+                plot_data["post_time"] = optimal_flight_time
 
                 # Paddle's normal in its local frame (adjust if your model uses a different axis)
                 n_local = np.array([0.0, 1.0, 0.0])
@@ -160,11 +183,7 @@ if __name__ == "__main__":
                     R_delta = Rotation.from_rotvec(angle * axis)
 
                 # Apply the rotation
-                try:
-                    R_new = R_delta * R_current
-                except ValueError as e:
-                    print(f"Error in rotation calculation: {e}")
-                    R_new = R_current  # Fallback to current orientation
+                R_new = R_delta * R_current
 
                 # Convert back to Euler angles (xyz convention)
                 euler_new = R_new.as_euler("xyz", degrees=False)
@@ -189,6 +208,9 @@ if __name__ == "__main__":
 
             data.site("target_pose").xpos = robot_arm.target_position
             model.site_rgba[data.site("target_pose").id] = np.array([0, 1, 0, 1]) if state == 1 else np.array([1, 0, 0, 1])
+
+            # Update the plots with the latest data
+            plot_manager.update(plot_data)
 
             # Pick up changes to the physics state, apply perturbations, update options from GUI.
             viewer.sync()
