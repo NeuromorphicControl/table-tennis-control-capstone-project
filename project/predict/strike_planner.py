@@ -1,9 +1,20 @@
 import numpy as np
 
-from .physics import STANDARD_GRAVITY, calc_time_to_floor, predict_position, predict_velocity
+from .physics import STANDARD_GRAVITY
 
 class StrikePlanner:
+    """Class to plan the strike of a ball towards a target position based on its predicted trajectory and the working area of the robot arm."""
+    
     def __init__(self, target, trajectory_predictor, working_area_bounds, gravity_vector=None):
+        """Initialize the StrikePlanner with the target position, trajectory predictor, working area bounds, and optional gravity vector.
+        
+        Args:
+            target (np.ndarray): Array of shape (3,) containing the target position for the ball.
+            trajectory_predictor (TrajectoryPredictor): An instance of the TrajectoryPredictor class to predict the ball's trajectory.
+            working_area_bounds (tuple): A tuple containing the bounds of the working area for the robot arm in the format ((x_min, x_max), (y_min, y_max), (z_min, z_max)).
+            gravity_vector (np.ndarray | None): Array of shape (3,) containing the gravitational acceleration. If None, uses the standard gravity.
+        """
+
         self.target = target
         self.trajectory_predictor = trajectory_predictor
         self.gravity_vector = gravity_vector or STANDARD_GRAVITY
