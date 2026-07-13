@@ -48,8 +48,8 @@ if __name__ == "__main__":
             position_kd=[29.6, 29.6, 29.6],
             orientation_kp=[680.0, 680.0, 680.0],
             orientation_kd=[23.0, 23.0, 23.0],
-            null_kp=80.0,
-            null_kd=60.0, # Damping for the base joints to prevent oscillations
+            null_kp=60.0,
+            null_kd=50.0, # Damping for the base joints to prevent oscillations
     )
 
     initial_pose = robot_arm.get_site_pose()
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     working_area_bounds = ((working_x_min, working_x_max), (working_y_min, working_y_max), (working_z_min, working_z_max))
 
     # Initialize the PlotManager
-    plot_manager = PlotManager(update_interval=0.1)
+    plot_manager = PlotManager(update_interval=0.5)
     plot_manager.add(TrajectoryPlot(ball, target, history_length=20))
 
     plot_data = {
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     strike_planner = StrikePlanner(target, trajectory_predictor, working_area_bounds=working_area_bounds)
 
     state = 0
-    tolerance = 0.01 # Tolerance for when to update the robot arm's target position based on the ball's predicted trajectory
+    tolerance = 0.005 # Tolerance for when to update the robot arm's target position based on the ball's predicted trajectory
 
     with mujoco.viewer.launch_passive(model, data, key_callback=key_callback) as viewer:
         while viewer.is_running():
