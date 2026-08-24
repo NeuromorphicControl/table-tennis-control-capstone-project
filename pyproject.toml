@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "A table-tennis playing robot arm controlled in operational space (Neuromorphic Control capstone project)"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.11"
+requires-python = ">=3.10,<3.14"
 authors = [
     { name = "Samuel Galla" },
     { name = "Tim Huber" },
@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "mujoco>=3.2",
+    "mujoco==3.6",
     "numpy>=1.26",
     "scipy>=1.11",
     "opencv-python-headless>=4.9",
