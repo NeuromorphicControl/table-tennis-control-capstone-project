@@ -1,0 +1,180 @@
+<mujoco model="ping-pong-robot">
+  <compiler meshdir="." texturedir="."/>
+  <statistic extent="1.5" meansize=".05"/>
+
+  <!-- 
+    Collision bitmasks (contype / conaffinity):
+
+      bit 0 (1) : ball
+      bit 1 (2) : static environment (ground, table, net)
+      bit 2 (4) : robot links
+      bit 3 (8) : paddle
+
+    ball  : contype 1, conaffinity 10 -> collides with environment + paddle
+    env   : contype 2, conaffinity 13 -> collides with ball + links + paddle
+    link  : contype 4, conaffinity 14 -> collides with environment + other links + paddle
+    paddle: contype 8, conaffinity  7 -> collides with ball + environment + links
+  -->
+
+  <default>
+    <pair solref="-35000 -15.75" solimp="0.95 0.99 0.001 0.5 2"/>
+    
+    <default class="visual">
+      <geom contype="0" conaffinity="0" group="2" rgba=".15 .15 .15 1" type="mesh"/>
+    </default>
+
+    <default class="collision">
+      <!-- Simplified collision proxies for the arm links.  Enable geom group 3 in the viewer to see them. -->
+      <geom contype="4" conaffinity="14" group="3" rgba="0 .8 .8 .35" density="0"/>
+    </default>
+  </default>
+
+  <option timestep="0.001" jacobian="auto" tolerance="1e-8" gravity="0 0 -9.81"/>
+
+  <visual>
+    <global offwidth="1920" offheight="1080" azimuth="90" elevation="-25"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <quality shadowsize="4096"/>
+    <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15" zfar="40" haze="0.3" znear="0.005"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="512"/>
+    <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
+
+    <mesh file="table.obj"/>
+
+    <mesh file="arm-base.obj"/>
+    <mesh file="rotator.obj"/>
+    <mesh file="arm1.obj"/>
+    <mesh file="arm2.obj"/>
+    <mesh file="paddle-rotator.obj"/>
+    <mesh file="paddle.obj"/>
+
+    <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
+  </asset>
+
+  <worldbody>
+    <!-- Lights -->
+    <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
+
+    <!-- Cameras -->
+    <camera name="top_down" pos="0 0 10" euler="0 0 90"/>
+    <camera name="render_cam" pos="6.405 -2.284 3.186" xyaxes="0.336 0.942 0.000 -0.400 0.143 0.906"/>
+
+    <!-- Ground -->
+    <geom name="ground" type="plane" size="0 0 1" pos="0 0 0" quat="1 0 0 0" material="matplane" condim="1" contype="2" conaffinity="13"/>
+
+    <!-- Table -->
+    <body name="table" pos="0 0 0" euler="0 0 0">
+      <geom type="mesh" mesh="table" pos="0 0 0.01" euler="0 0 0" contype="0" conaffinity="0" group="2"/>
+
+      <!-- Collision proxies for the play surface and the net -->
+      <geom name="table_collider_v" type="box" size="0.9225 0.0025 0.07625" pos="0 0 0.83625" rgba="0 0 0 0" contype="2" conaffinity="13"/>
+      <geom name="table_collider_h" type="box" size="0.7625 1.37 0.025" pos="0 0 0.735" rgba="0 0 0 0" contype="2" conaffinity="13"/>
+    </body>
+
+    <body name="ball" pos="0 2 1" euler="0 0 0">
+      <geom name="ball_geom" type="sphere" size="0.02" rgba="1 0.5 0 1" mass="0.00167" contype="1" conaffinity="10"/>
+      <joint type="free" name="ball_free" damping="0.0"/>
+    </body>
+
+    <!-- Landing target on the opponent half (moved at runtime) -->
+    <site name="target" pos="0 1 0.762" size="0.04" rgba="0 0.4 1 0.9"/>
+
+    <!-- Arm Base -->
+    <body name="base" pos="0 -3.255 0.45" euler="0 0 0">
+      <joint type="slide" axis="0 1 0" name="base_x" range="-1.8 1.8" damping="2"/>
+      <joint type="slide" axis="1 0 0" name="base_y" range="-1.8 1.8" damping="2"/>
+      <geom class="visual" mesh="arm-base" pos="0 0.95 0.42" euler="0 0 180" mass="12.5"/>
+      <geom class="collision" name="base_collider" type="box" size="0.25 0.298 0.52" pos="0 0.083 0.162"/>
+
+      <!-- Camera -->
+      <camera name="follow" pos="0 -2.5 1.5" euler="80 0 0" mode="track"/>
+
+      <!-- Rotator 1 -->
+      <body name="rotator1" pos="0 0.5 0.425" euler="0 0 0">
+        <joint type="hinge" axis="0 0 1" name="rotator1" damping="0.04" range="-109 155"/>
+        <geom class="visual" mesh="rotator" pos="0 0.45 0" euler="0 0 180" mass="0.250"/>
+        <geom class="collision" name="rotator1_collider" type="sphere" size="0.085" pos="0 0.01 0"/>
+
+        <!-- Rotator 2 -->
+        <body name="rotator2" pos="0 0.055 0.06" euler="-90 0 90">
+          <joint type="hinge" axis="0 0 1" name="rotator2" damping="0.04" range="-120 109"/>
+          <geom class="visual" mesh="rotator" pos="0 -0.45 0" euler="0 0 0" mass="0.250"/>
+          <geom class="collision" name="rotator2_collider" type="sphere" size="0.08" pos="0 0 0"/>
+
+          <!-- Arm 1 -->
+          <body name="arm1" pos="0 -0.050 0.061" euler="90 0 45">
+            <joint type="hinge" axis="0 0 1" name="arm1" damping="0.04" range="-115 120"/>
+            <geom class="visual" mesh="arm1" pos="0 0.335 -0.11" euler="0 0 180" mass="0.550"/>
+            <geom class="collision" name="arm1_collider" type="capsule" size="0.06" fromto="0 0 0 0 0.5 0.045"/>
+
+            <!-- Arm 2 -->
+            <body name="arm2" pos="0 0.5 0.045" euler="0 0 -90">
+              <joint type="hinge" axis="0 0 1" name="arm2" damping="0.04" range="-109 149"/>
+              <geom class="visual" mesh="arm2" pos="0 -0.164 -0.155" euler="0 0 180" mass="0.450"/>
+              <geom class="collision" name="arm2_collider" type="capsule" size="0.05" fromto="0 0 0 0 0.4 0.015"/>
+
+              <!-- Paddle Rotator -->
+              <body name="paddle_rotator" pos="0 0.4 0.015" euler="0 180 -45">
+                <joint type="hinge" axis="0 0 1" name="paddle_rotator" damping="0.01" range="-63 246"/>
+                <geom class="visual" mesh="paddle-rotator" pos="0 -0.565 0.174" euler="0 0 0" mass="0.1"/>
+                <geom class="collision" name="paddle_rotator_collider" type="capsule" size="0.045" fromto="0 0 0 0 0.065 0.035"/>
+
+                <!-- Paddle -->
+                <body name="paddle" pos="0 0.065 0.035" euler="-90 0 -90">
+                  <joint type="hinge" axis="0 0 1" name="paddle" damping="0.01" range="-120 241"/>
+                  <geom name="paddle" type="mesh" mesh="paddle" pos="-0.094 0 0" euler="90 0 0" rgba="1 .4 .4 1" mass="0.150" contype="8" conaffinity="7"/>
+                  
+                  <!-- The site's local +y axis is the paddle face normal. -->
+                  <site name="paddle_site" pos="0 0 0.1855" euler="0 180 0" size="0.015" rgba="1 0 0 1"/>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+
+  <contact>
+    <pair geom1="ball_geom" geom2="table_collider_v"/>
+    <pair geom1="ball_geom" geom2="table_collider_h"/>
+    <pair geom1="ball_geom" geom2="ground"/>
+    <pair geom1="ball_geom" geom2="paddle"/>
+
+    <!-- 
+      Links joined directly to each other would otherwise be in constant
+      spurious contact at the shared joint; self-collision is real for
+      every other pair. 
+    -->
+    <exclude body1="base" body2="rotator1"/>
+    <exclude body1="rotator1" body2="rotator2"/>
+    <exclude body1="rotator2" body2="arm1"/>
+    <exclude body1="arm1" body2="arm2"/>
+    <exclude body1="arm2" body2="paddle_rotator"/>
+    <exclude body1="paddle_rotator" body2="paddle"/>
+    
+    <!--
+      Not a joint pair, but rotator1 and arm1 sit only one short link
+      apart and their collision proxies overlap at the ready pose and
+      throughout ordinary play (confirmed empirically), not just at
+      extreme joint angles.
+    -->
+    <exclude body1="rotator1" body2="arm1"/>
+  </contact>
+
+
+  <actuator>
+    <motor name="base_x" joint="base_x"/>
+    <motor name="base_y" joint="base_y"/>
+    <motor name="rotator1" joint="rotator1"/>
+    <motor name="rotator2" joint="rotator2"/>
+    <motor name="arm1" joint="arm1"/>
+    <motor name="arm2" joint="arm2"/>
+    <motor name="paddle_rotator" joint="paddle_rotator"/>
+    <motor name="paddle" joint="paddle"/>
+  </actuator>
+</mujoco>

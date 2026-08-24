@@ -1,0 +1,107 @@
+"""Headless N-seed x T-second benchmark harness.
+
+This is the reusable form of the ad-hoc script pattern used throughout the
+project's tuning/debugging process: run several seeds of a full rally session
+with the visualisation disabled, aggregate RallyStatistics across all of
+them, and report the standard set of metrics used to accept or reject every
+change made to this project.
+
+Usage:
+    python scripts/benchmark.py
+    python scripts/benchmark.py --seeds 15 --duration 20
+    python scripts/benchmark.py --seeds 6 --duration 30 --start-seed 1
+
+The metrics reported (strike rate, on-target-half rate, net-clip rate, mean
+and median landing error) are exactly the ones tracked throughout this
+project's tuning/debugging history.
+"""
+
+from __future__ import annotations
+
+import argparse
+
+import numpy as np
+
+from table_tennis_control.agent import RallyAgent, RallyStatistics
+from table_tennis_control.config import SimulationConfig
+from table_tennis_control.control import RobotArm
+from table_tennis_control.world import load_scene
+
+
+def run_one(seed: int, duration: float) -> RallyStatistics:
+    """Run one full headless session and return its accumulated statistics.
+    
+    Args:
+        seed: Random seed to use for this session.
+        duration: Simulated seconds to run this session.
+    
+    Returns:
+        RallyStatistics object containing the accumulated statistics for this session.
+    """
+    config = SimulationConfig(seed=seed)
+    config.visualisation.enabled = False
+
+    # Load the scene, create the robot arm and agent
+    scene = load_scene(config)
+    arm = RobotArm(scene.model, scene.data, config.arm, config.control, config.collision)
+    agent = RallyAgent(scene, arm, config)
+
+    # Run the simulation for the specified duration, stepping the agent and serving as needed
+    while scene.time < duration:
+        agent.maybe_serve()
+        agent.step()
+    return agent.statistics
+
+
+def run_benchmark(seeds: list[int], duration: float) -> dict[str, float]:
+    """Run every seed and aggregate into the standard metric set."""
+    total_serves = total_strikes = total_landings = total_on_half = 0
+    all_errors: list[float] = []
+
+    # Run each seed and accumulate statistics
+    for seed in seeds:
+        stats = run_one(seed, duration)
+        total_serves += stats.serves
+        total_strikes += stats.strikes
+        total_landings += stats.landings
+        total_on_half += stats.on_target_half
+        all_errors.extend(stats.landing_errors)
+
+    errors = np.asarray(all_errors) if all_errors else np.array([0.0])
+    net_clips = total_strikes - total_landings
+
+    return {
+        "serves": total_serves,
+        "strikes": total_strikes,
+        "landings": total_landings,
+        "on_half": total_on_half,
+        "strike_rate": total_strikes / max(total_serves, 1),
+        "on_half_rate": total_on_half / max(total_strikes, 1),
+        "net_clip_rate": net_clips / max(total_strikes, 1),
+        "mean_err": float(errors.mean()),
+        "median_err": float(np.median(errors)),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--seeds", type=int, default=15, help="number of seeds to run")
+    parser.add_argument("--start-seed", type=int, default=1, help="first seed value")
+    parser.add_argument("--duration", type=float, default=20.0, help="simulated seconds per seed")
+    args = parser.parse_args()
+
+    # Run the benchmark and print the results
+    seeds = list(range(args.start_seed, args.start_seed + args.seeds))
+    result = run_benchmark(seeds, args.duration)
+
+    print(f"{len(seeds)} seeds x {args.duration:g} s ({seeds[0]}-{seeds[-1]}):")
+    print(f"  serves={result['serves']} strikes={result['strikes']} landings={result['landings']} on_half={result['on_half']}")
+    print(f"  strike_rate       = {result['strike_rate']:.3f}")
+    print(f"  on_half_rate      = {result['on_half_rate']:.3f}")
+    print(f"  net_clip_rate     = {result['net_clip_rate']:.3f}")
+    print(f"  mean_landing_err  = {result['mean_err']:.3f} m")
+    print(f"  median_landing_err= {result['median_err']:.3f} m")
+
+
+if __name__ == "__main__":
+    main()

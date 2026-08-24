@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1380 710" width="1380" height="710"
+     font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>table_tennis_control architecture</title>
+  <desc>
+    Block diagram of the control architecture: an outer planning loop
+    (observer, forward model, strike planner) running at 50 Hz hands a
+    minimum-jerk reference trajectory to an inner control loop (operational
+    space control with feedback linearisation, plus a repulsive-potential
+    collision-avoidance field feeding extra joint torque into it) running at
+    1 kHz, which drives the MuJoCo plant. The plant's ball position closes
+    the loop back into the observer. Orchestrated once per simulated tick by
+    agent.RallyAgent.step().
+  </desc>
+
+  <defs>
+    <marker id="arrowSlate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrowMuted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrowVermillion" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d65e00"/>
+    </marker>
+    <marker id="arrowGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8c93d"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="1380" height="710" fill="#ffffff"/>
+
+  <!-- title -->
+  <text x="690" y="36" text-anchor="middle" font-size="24" font-weight="700" fill="#0f172a">Control Architecture</text>
+  <text x="690" y="58" text-anchor="middle" font-size="12.5" fill="#64748b">table_tennis_control.agent.RallyAgent — observer, forward model, strike planner and operational-space control, once per simulated tick</text>
+
+  <!-- ================= group backgrounds (drawn first, boxes on top) ================= -->
+  <rect x="20" y="174" width="630" height="194" rx="14" fill="#eaf5fc" stroke="#0073b3" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="335" y="198" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="0.5" fill="#00567f">OUTER LOOP — replans at 50 Hz</text>
+
+  <rect x="920" y="174" width="240" height="354" rx="14" fill="#fdf0e6" stroke="#d65e00" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="1040" y="198" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="0.5" fill="#a34700">INNER LOOP — 1 kHz control</text>
+
+  <!-- ================= target (external input) ================= -->
+  <rect x="460" y="100" width="170" height="54" rx="10" fill="#fffbea" stroke="#e8c93d" stroke-width="2"/>
+  <text x="545" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#6b5710">Target</text>
+  <text x="545" y="140" text-anchor="middle" font-size="10.5" fill="#7a6300">desired landing point</text>
+  <line x1="545" y1="154" x2="545" y2="220" stroke="#e8c93d" stroke-width="2" marker-end="url(#arrowGold)"/>
+
+  <!-- ================= main chain (y 220-348) ================= -->
+
+  <!-- Observer -->
+  <rect x="40" y="220" width="170" height="128" rx="12" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+  <text x="125" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Observer</text>
+  <text x="125" y="270" text-anchor="middle" font-size="11" fill="#475569">extended-state</text>
+  <text x="125" y="288" text-anchor="middle" font-size="11" fill="#475569">position → velocity</text>
+  <text x="125" y="306" text-anchor="middle" font-size="11" fill="#475569">+ disturbance (L4)</text>
+  <text x="125" y="330" text-anchor="middle" font-size="9.5" font-style="italic" fill="#94a3b8">estimation.ball_observer</text>
+
+  <!-- Forward Model -->
+  <rect x="250" y="220" width="170" height="128" rx="12" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+  <text x="335" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Forward Model</text>
+  <text x="335" y="270" text-anchor="middle" font-size="11" fill="#475569">ballistic flight,</text>
+  <text x="335" y="288" text-anchor="middle" font-size="11" fill="#475569">bounces, net, floor</text>
+  <text x="335" y="306" text-anchor="middle" font-size="11" fill="#475569">(internal model)</text>
+  <text x="335" y="330" text-anchor="middle" font-size="9.5" font-style="italic" fill="#94a3b8">estimation.predictor</text>
+
+  <!-- Strike Planner -->
+  <rect x="460" y="220" width="170" height="128" rx="12" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+  <text x="545" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Strike Planner</text>
+  <text x="545" y="270" text-anchor="middle" font-size="11" fill="#475569">where / when / how</text>
+  <text x="545" y="288" text-anchor="middle" font-size="11" fill="#475569">to hit (closed form)</text>
+  <text x="545" y="306" text-anchor="middle" font-size="11" fill="#475569">commit &amp; refine</text>
+  <text x="545" y="330" text-anchor="middle" font-size="9.5" font-style="italic" fill="#94a3b8">planning.strike_planner</text>
+
+  <!-- Reference Trajectory (bridges the two loops) -->
+  <rect x="670" y="220" width="230" height="128" rx="12" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+  <text x="785" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Reference Trajectory</text>
+  <text x="785" y="270" text-anchor="middle" font-size="11" fill="#475569">minimum-jerk quintic,</text>
+  <text x="785" y="288" text-anchor="middle" font-size="11" fill="#475569">C² continuous</text>
+  <text x="785" y="306" text-anchor="middle" font-size="11" fill="#475569">position + orientation</text>
+  <text x="785" y="330" text-anchor="middle" font-size="9.5" font-style="italic" fill="#94a3b8">planning.trajectory</text>
+
+  <!-- Controller -->
+  <rect x="940" y="220" width="200" height="128" rx="12" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+  <text x="1040" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Controller</text>
+  <text x="1040" y="270" text-anchor="middle" font-size="11" fill="#475569">operational space +</text>
+  <text x="1040" y="288" text-anchor="middle" font-size="11" fill="#475569">feedback linearisation</text>
+  <text x="1040" y="306" text-anchor="middle" font-size="11" fill="#475569">(L5/L6)</text>
+  <text x="1040" y="330" text-anchor="middle" font-size="9.5" font-style="italic" fill="#94a3b8">control.operational_space</text>
+
+  <!-- Plant -->
+  <rect x="1180" y="220" width="170" height="128" rx="12" fill="#f1f5f9" stroke="#0f172a" stroke-width="2"/>
+  <text x="1265" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Plant</text>
+  <text x="1265" y="270" text-anchor="middle" font-size="11" fill="#475569">MuJoCo: arm + ball</text>
+  <text x="1265" y="288" text-anchor="middle" font-size="11" fill="#475569">torque → motion</text>
+  <text x="1265" y="306" text-anchor="middle" font-size="11" fill="#475569">(the real system)</text>
+  <text x="1265" y="330" text-anchor="middle" font-size="9.5" font-style="italic" fill="#94a3b8">MuJoCo (external)</text>
+
+  <!-- chain arrows -->
+  <line x1="210" y1="284" x2="250" y2="284" stroke="#334155" stroke-width="2.2" marker-end="url(#arrowSlate)"/>
+  <line x1="420" y1="284" x2="460" y2="284" stroke="#334155" stroke-width="2.2" marker-end="url(#arrowSlate)"/>
+  <line x1="630" y1="284" x2="670" y2="284" stroke="#334155" stroke-width="2.2" marker-end="url(#arrowSlate)"/>
+  <line x1="900" y1="284" x2="940" y2="284" stroke="#334155" stroke-width="2.2" marker-end="url(#arrowSlate)"/>
+  <line x1="1140" y1="284" x2="1180" y2="284" stroke="#334155" stroke-width="2.2" marker-end="url(#arrowSlate)"/>
+  <text x="1170" y="276" text-anchor="middle" font-size="10" fill="#334155">u</text>
+
+  <!-- ================= collision avoidance ================= -->
+  <rect x="940" y="408" width="200" height="100" rx="10" fill="#fff4ec" stroke="#d65e00" stroke-width="2"/>
+  <text x="1040" y="432" text-anchor="middle" font-size="12.5" font-weight="700" fill="#a34700">Collision Avoidance</text>
+  <text x="1040" y="452" text-anchor="middle" font-size="10.5" fill="#8a4415">repulsive potential field</text>
+  <text x="1040" y="470" text-anchor="middle" font-size="10" fill="#8a4415">mj_geomDistance → torque</text>
+  <text x="1040" y="490" text-anchor="middle" font-size="9.5" font-style="italic" fill="#c08a5c">control.collision_avoidance</text>
+  <line x1="1040" y1="408" x2="1040" y2="348" stroke="#d65e00" stroke-width="2.2" marker-end="url(#arrowVermillion)"/>
+  <text x="1050" y="380" text-anchor="start" font-size="10.5" fill="#a34700">extra torque</text>
+
+  <!-- ================= feedback path: plant -> observer ================= -->
+  <path d="M 1265 348 L 1265 568 L 125 568 L 125 348"
+        fill="none" stroke="#64748b" stroke-width="2.2" stroke-dasharray="1 0" marker-end="url(#arrowMuted)"/>
+  <rect x="595" y="576" width="200" height="22" fill="#ffffff"/>
+  <text x="695" y="592" text-anchor="middle" font-size="11.5" font-style="italic" fill="#475569">position measurement  y = C·x</text>
+
+  <!-- ================= legend / footer ================= -->
+  <rect x="50" y="645" width="16" height="16" rx="3" fill="#eaf5fc" stroke="#0073b3" stroke-width="1.5"/>
+  <text x="74" y="658" font-size="11.5" fill="#334155">outer loop — planning (Lecture 6)</text>
+
+  <rect x="400" y="645" width="16" height="16" rx="3" fill="#fdf0e6" stroke="#d65e00" stroke-width="1.5"/>
+  <text x="424" y="658" font-size="11.5" fill="#334155">inner loop — torque control (Lecture 5/6)</text>
+
+  <rect x="800" y="645" width="16" height="16" rx="3" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5"/>
+  <text x="824" y="658" font-size="11.5" fill="#334155">simulated plant (MuJoCo)</text>
+
+  <rect x="1090" y="645" width="16" height="16" rx="3" fill="#fffbea" stroke="#e8c93d" stroke-width="1.5"/>
+  <text x="1114" y="658" font-size="11.5" fill="#334155">target (external reference)</text>
+
+  <text x="690" y="691" text-anchor="middle" font-size="9.5" fill="#94a3b8">outer/inner loop colors reused from PHASE_COLOR[TRACK]/[SWING]; target color reused from Color.TARGET — see visualization/colors.py</text>
+</svg>

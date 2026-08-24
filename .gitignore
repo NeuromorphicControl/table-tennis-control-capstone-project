@@ -217,8 +217,12 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-
-output/
-
 # MuJoCo log files
 MUJOCO_LOG.TXT
+
+# Claude AI
+.claude/
+
+# Custom ignore rules for this project
+output/
+tmp/

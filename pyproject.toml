@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "table-tennis-control"
+version = "1.0.0"
+description = "A table-tennis playing robot arm controlled in operational space (Neuromorphic Control capstone project)"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Samuel Galla" },
+    { name = "Tim Huber" },
+]
+keywords = ["robotics", "control", "mujoco", "operational-space-control", "table-tennis"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "mujoco>=3.2",
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "opencv-python-headless>=4.9",
+    "matplotlib>=3.8",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+notebook = [
+    "matplotlib>=3.8",
+    "ipykernel>=6.29",
+    "mediapy>=1.2",
+]
+
+[project.scripts]
+ttc-sim = "table_tennis_control.apps.simulate:main"
+ttc-render = "table_tennis_control.apps.render:main"
+
+[project.urls]
+Repository = "https://github.com/Techniksam/neuromorphic-control-capstone-project"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+table_tennis_control = ["assets/*.xml", "assets/*.obj", "assets/*.mtl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
