@@ -46,6 +46,19 @@ def test_observer_estimates_an_unmodelled_acceleration():
     assert np.allclose(observer.disturbance, drag, atol=0.15)
 
 
+def test_observer_holds_its_estimate_while_not_settled():
+    """``settled=False`` (e.g. a sensor still filling its delay buffer) must freeze the estimate."""
+    observer = BallObserver(1e-3, ObserverConfig(reset_innovation=0.05))
+    observer.reset(np.zeros(3), np.array([1.0, 0.0, 0.0]))
+    before_position, before_velocity = observer.position.copy(), observer.velocity.copy()
+
+    # A jump that would normally blow through reset_innovation and re-initialise the observer.
+    observer.update(np.array([5.0, 0.0, 0.0]), settled=False)
+
+    assert np.allclose(observer.position, before_position)
+    assert np.allclose(observer.velocity, before_velocity)
+
+
 def test_observer_reinitialises_after_a_jump():
     observer = BallObserver(1e-3, ObserverConfig(reset_innovation=0.05))
     observer.reset(np.zeros(3), np.zeros(3))

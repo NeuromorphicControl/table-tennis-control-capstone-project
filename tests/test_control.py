@@ -206,6 +206,24 @@ def test_agent_returns_serves_onto_the_opponent_half():
     assert np.all(np.isfinite(scene.data.qvel))
 
 
+def test_agent_still_returns_serves_under_a_delayed_sensor():
+    """The predictor's delay compensation should keep strikes working under sensor latency."""
+    config = SimulationConfig(seed=2)
+    config.sensor.delay_steps = 8
+    scene = load_scene(config)
+    arm = RobotArm(scene.model, scene.data, config.arm, config.control, config.collision)
+    agent = RallyAgent(scene, arm, config)
+
+    while scene.time < 16.0:
+        agent.maybe_serve()
+        agent.step()
+
+    statistics = agent.statistics
+    assert statistics.strikes >= 2
+    assert statistics.on_target_half >= 1
+    assert np.all(np.isfinite(scene.data.qvel))
+
+
 def test_standard_returns_bounce_on_the_opponents_half_first():
     """A standard return must touch the opponent's half before the floor target."""
     config = SimulationConfig(seed=4)

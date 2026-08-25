@@ -107,7 +107,7 @@ rather than instead of it, so this project's own bindings live on the digits
 ttc-sim --seed 3                  # different reproducible serves/targets (default 37)
 ttc-sim --speed 0.25              # quarter speed, to watch a stroke closely
 ttc-sim --serve-interval 2.5      # serve more often
-ttc-sim --sensor-delay 8          # stress the observer's delay compensation
+ttc-sim --sensor-delay 8          # stress the predictor's delay compensation
 ttc-sim --no-collision-avoidance  # switch the potential field off
 ttc-sim --no-overlay              # drop the whole in-window overlay
 ttc-sim --no-auto-serve           # serve manually with [space] instead
@@ -163,12 +163,16 @@ down to a fast inner loop that tracks it with torque control.
 
 ```
                     ┌──────────────┐
-    measurement ───►│   observer   │  position → velocity + disturbance
+    true position ─►│sensor (delay)│  a camera system's measurement latency
+                    └──────┬───────┘
+                           ▼
+                    ┌──────────────┐
+                    │   observer   │  position → velocity + disturbance
                     └──────┬───────┘  (extended state, Lecture 4)
                            ▼
                     ┌──────────────┐
-                    │ forward model│  ballistic flight + table bounces
-                    └──────┬───────┘  (internal model principle)
+                    │ forward model│  ballistic flight + table bounces;
+                    └──────┬───────┘  also compensates the sensor's delay
                            ▼
                     ┌──────────────┐
                     │strike planner│  where / when / how to hit
@@ -183,16 +187,31 @@ down to a fast inner loop that tracks it with torque control.
                         MuJoCo plant
 ```
 
+### Sensor (`table_tennis_control.world.ball_sensor`)
+
+The ball's true position is never available to the controller directly — a
+`BallSensor` sits between the plant and the observer and reports it
+`--sensor-delay` control steps late, the way a real camera system's latency
+would. The delay lives here, upstream of the observer, not inside it: the
+sensor doesn't estimate anything, it just buffers and re-reports, and
+everything downstream (predictor, planner) has to compensate for the lag it
+introduces rather than the sensor hiding it. `--sensor-delay` lets you see
+that compensation work (validated up to at least 8 control steps with no
+measurable accuracy cost).
+
 ### Observer (`table_tennis_control.estimation.ball_observer`)
 
 The controller never reads the ball's velocity out of the simulator. It gets
-a position measurement and reconstructs both velocity and an unmodelled
-disturbance acceleration with a Luenberger observer whose three poles all
-sit at the same location, so there's a single bandwidth knob to tune. That
-disturbance estimate is exactly what active disturbance rejection would
-cancel; here it's fed forward into the forward model instead. `--sensor-delay`
-lets you see the delay compensation work (validated up to at least 8 control
-steps with no measurable accuracy cost). Artificial measurement noise is not
+a position measurement — already delayed by the sensor above — and
+reconstructs both velocity and an unmodelled disturbance acceleration with a
+Luenberger observer whose three poles all sit at the same location, so
+there's a single bandwidth knob to tune. That disturbance estimate is
+exactly what active disturbance rejection would cancel; here it's fed
+forward into the forward model instead. The observer itself has no notion of
+delay — it runs on whatever sample it's handed; the forward model
+(`BallPredictor.state_after`) is what rolls its estimate forward by the
+sensor's current lag before the planner ever sees it (see
+`RallyAgent._estimated_state`). Artificial measurement noise is not
 supported: this is a fixed-gain observer, not a Kalman filter, so noise gets
 amplified straight into the estimate rather than filtered out.
 
@@ -297,7 +316,7 @@ src/table_tennis_control/
     physics.py          ballistics, bounce and impact models (vectorised)
     kinematics.py       rotation helpers
     agent.py            the rally agent and its state machine
-    world/               MuJoCo scene, ball, target, ball launcher
+    world/               MuJoCo scene, ball, delayed ball sensor, target, ball launcher
     estimation/         extended-state observer, forward model
     planning/           return solver, strike planner, reference trajectories
     control/            operational-space control, collision avoidance
@@ -311,8 +330,8 @@ docs/                   architecture diagram (more design notes to follow)
 
 Everything you might want to tune lives in `src/table_tennis_control/config.py`:
 table and ball properties, arm limits and the strike zone, controller gains,
-the potential field, observer bandwidth, planner weights, launcher ranges and
-the overlay.
+the potential field, observer bandwidth, sensor delay, planner weights,
+launcher ranges and the overlay.
 
 ---
 

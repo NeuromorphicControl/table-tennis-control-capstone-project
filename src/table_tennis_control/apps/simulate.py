@@ -70,7 +70,7 @@ def config_from_args(args: argparse.Namespace) -> SimulationConfig:
 
     # Set the sensor delay if specified
     if args.sensor_delay is not None:
-        config.observer.measurement_delay_steps = args.sensor_delay
+        config.sensor.delay_steps = args.sensor_delay
 
     # Set the real-time flag based on the speed argument
     config.real_time = args.speed > 0.0

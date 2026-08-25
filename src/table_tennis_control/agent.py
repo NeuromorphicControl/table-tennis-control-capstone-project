@@ -3,19 +3,20 @@
 The block diagram this implements is the one from Lecture 6, with the ball
 playing the role of the exogenous system::
 
-    measurement -> [observer] -> [forward model] -> [strike planner]
-                                                          |
-                                              reference trajectory
-                                                          v
-                        [operational-space control + feedback linearisation]
-                                                          |
-                                                        torque
-                                                          v
-                                                       [plant]
+    plant -> [sensor: delay] -> [observer] -> [forward model] -> [strike planner]
+                                                                      |
+                                                          reference trajectory
+                                                                      v
+                                    [operational-space control + feedback linearisation]
+                                                                      |
+                                                                    torque
+                                                                      v
+                                                                   [plant]
 
-The outer loop (observer, prediction, planning) runs at
-:attr:`PlannerConfig.replan_rate`; the inner loop (torque control) runs at the
-simulation rate.
+The sensor's delay is compensated for on the way out of the observer (see
+:meth:`RallyAgent._estimated_state`), not inside it. The outer loop (sensor,
+observer, prediction, planning) runs at :attr:`PlannerConfig.replan_rate`;
+the inner loop (torque control) runs at the simulation rate.
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ from .config import SimulationConfig
 from .control import ArmDiagnostics, RobotArm
 from .estimation import BallObserver, BallPredictor, Trajectory
 from .planning import GoToTrajectory, StrikePlan, StrikePlanner, SwingTrajectory, TaskState
-from .world import BallLauncher, Scene
+from .world import BallLauncher, BallSensor, Scene
 
 __all__ = ["Phase", "RallyAgent", "AgentDiagnostics", "RallyStatistics"]
 
@@ -97,6 +98,7 @@ class RallyAgent:
         dt = scene.timestep
         gravity = scene.gravity
 
+        self.sensor = BallSensor(self.config.sensor)
         self.observer = BallObserver(dt, self.config.observer, gravity)
         self.predictor = BallPredictor(
             self.config.table,
@@ -156,12 +158,12 @@ class RallyAgent:
         )
 
     def _estimated_state(self) -> tuple[np.ndarray, np.ndarray]:
-        """Current ball state, with the sensing delay compensated for."""
+        """Current ball state, with the sensor's delay compensated for."""
         position = self.observer.position
         velocity = self.observer.velocity
 
-        # Compensate for the observer's sensing delay by predicting the ball state forward in time.
-        lag = self.observer.lag_ticks * self.scene.timestep
+        # Compensate for the sensor's delay by predicting the ball state forward in time.
+        lag = self.sensor.lag_ticks * self.scene.timestep
         if lag > 0.0:
             position, velocity = self.predictor.state_after(position, velocity, self.observer.acceleration, lag)
 
@@ -174,7 +176,8 @@ class RallyAgent:
         if self.config.target.resample_per_serve:
             self.scene.target.set_position(self.scene.target_sampler.sample(launch_x=float(serve.position[0])))
 
-        # Reset the observer to the new ball state, so it doesn't try to track the old one
+        # Reset the sensor and observer to the new ball state, so neither tries to track the old one
+        self.sensor.reset()
         self.observer.reset(serve.position, serve.velocity)
 
         # Update statistics and reset the state machine for the new rally
@@ -329,9 +332,9 @@ class RallyAgent:
         now = self.scene.time
         config = self.config
 
-        # 1 - Observer: update the ball state estimate from the latest measurement
-        measurement = self.scene.ball.measure()
-        self.observer.update(measurement)
+        # 1 - Sensor + observer: update the ball state estimate from the latest (delayed) measurement
+        measurement = self.sensor.measure(self.scene.ball)
+        self.observer.update(measurement, self.sensor.settled)
 
         time_to_impact = float("inf")
         if self.plan is not None:

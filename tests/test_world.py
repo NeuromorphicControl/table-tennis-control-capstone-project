@@ -5,10 +5,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from table_tennis_control.config import SimulationConfig
+from table_tennis_control.config import SensorConfig, SimulationConfig
 from table_tennis_control.estimation import BallPredictor
 from table_tennis_control.kinematics import point_in_box
-from table_tennis_control.world import BallLauncher, load_scene
+from table_tennis_control.world import BallLauncher, BallSensor, load_scene
 
 
 @pytest.fixture(scope="module")
@@ -102,6 +102,55 @@ def test_target_sampler_stays_reachably_clear_of_the_table(scene):
         assert target[2] == pytest.approx(scene.config.ball.radius)
         assert target[1] * table.opponent_side >= table.half_length + min_margin - 1e-9
         assert config.floor_x_range[0] <= target[0] <= config.floor_x_range[1]
+
+
+class _FakeBall:
+    """A stand-in for :class:`~table_tennis_control.world.ball.Ball` that doesn't need MuJoCo."""
+
+    def __init__(self, position):
+        self.position = np.asarray(position, dtype=float)
+
+    def measure(self) -> np.ndarray:
+        return self.position.copy()
+
+
+class TestBallSensor:
+    def test_lag_ticks_ramps_up_to_the_configured_delay_then_holds(self):
+        sensor = BallSensor(SensorConfig(delay_steps=3))
+        ball = _FakeBall([0.0, 0.0, 0.0])
+        assert sensor.lag_ticks == 0
+        for expected in (1, 2, 3, 3, 3):
+            sensor.measure(ball)
+            assert sensor.lag_ticks == expected
+
+    def test_measure_reports_the_reading_from_delay_steps_ago_once_settled(self):
+        sensor = BallSensor(SensorConfig(delay_steps=2))
+        ball = _FakeBall([0.0, 0.0, 0.0])
+        readings = []
+        for step in range(6):
+            ball.position = np.array([float(step), 0.0, 0.0])
+            readings.append(sensor.measure(ball))
+
+        for step in range(2, 6):
+            assert readings[step][0] == pytest.approx(step - 2)
+
+    def test_reset_clears_the_buffer_so_lag_ticks_ramps_up_again(self):
+        sensor = BallSensor(SensorConfig(delay_steps=2))
+        ball = _FakeBall([0.0, 0.0, 0.0])
+        for _ in range(5):
+            sensor.measure(ball)
+        assert sensor.settled
+
+        sensor.reset()
+        assert not sensor.settled
+        assert sensor.lag_ticks == 0
+
+    def test_zero_delay_is_instantaneous(self):
+        sensor = BallSensor(SensorConfig(delay_steps=0))
+        ball = _FakeBall([1.0, 2.0, 3.0])
+        assert np.allclose(sensor.measure(ball), [1.0, 2.0, 3.0])
+        assert sensor.settled
+        assert sensor.lag_ticks == 0
 
 
 class TestLauncher:

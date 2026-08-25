@@ -9,7 +9,9 @@ class Ball:
     """Thin wrapper around the free joint of the ball body.
 
     The class only exposes the *plant* state.  Everything the controller is
-    allowed to use goes through the observer in :mod:`table_tennis_control.estimation`,
+    allowed to use goes through :meth:`measure` and the delayed sensor built
+    on top of it (:class:`~table_tennis_control.world.ball_sensor.BallSensor`)
+    on the way to the observer in :mod:`table_tennis_control.estimation`,
     which mirrors the "the controller only sees the measurement" structure of
     the lecture.
     """
@@ -48,5 +50,5 @@ class Ball:
         self.data.qvel[self.dof_address + 3 : self.dof_address + 6] = 0.0
 
     def measure(self) -> np.ndarray:
-        """Position measurement handed to the observer."""
+        """Instantaneous, true position measurement."""
         return self.position.copy()

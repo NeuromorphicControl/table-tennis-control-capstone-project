@@ -251,8 +251,6 @@ class ObserverConfig:
     There is deliberately no ``measurement_noise`` field: this is a
     *fixed-gain* Luenberger observer, not a Kalman filter, and does not
     support artificial measurement noise. See config_provenance.md for why.
-    :attr:`measurement_delay_steps` below is unrelated and *is* supported --
-    see :meth:`~table_tennis_control.estimation.ball_observer.BallObserver.lag_ticks`.
     """
 
     #: Observer bandwidth [rad/s]; the three poles are placed at ``-bandwidth``.
@@ -269,8 +267,22 @@ class ObserverConfig:
     #: finite-difference velocities required to confirm a contact has
     #: ended and free flight has resumed.
     contact_clear_threshold: float = 0.05
+
+
+@dataclass
+class SensorConfig:
+    """Latency of the ball's position sensor -- e.g. a real camera system.
+
+    The delay sits between the plant (the true ball) and everything else:
+    the observer, and everything downstream of it, only ever sees where the
+    ball *was* ``delay_steps`` control steps ago. The predictor compensates
+    for it (:meth:`~table_tennis_control.agent.RallyAgent._estimated_state`),
+    the same way a real system would have to compensate for camera latency.
+    See :class:`~table_tennis_control.world.ball_sensor.BallSensor`.
+    """
+
     #: Sensing delay in control steps that the predictor compensates for.
-    measurement_delay_steps: int = 0
+    delay_steps: int = 0
 
 
 @dataclass
@@ -421,6 +433,7 @@ class SimulationConfig:
     control: ControlConfig = field(default_factory=ControlConfig)
     collision: CollisionConfig = field(default_factory=CollisionConfig)
     observer: ObserverConfig = field(default_factory=ObserverConfig)
+    sensor: SensorConfig = field(default_factory=SensorConfig)
     planner: PlannerConfig = field(default_factory=PlannerConfig)
     launcher: LauncherConfig = field(default_factory=LauncherConfig)
     target: TargetConfig = field(default_factory=TargetConfig)
