@@ -23,7 +23,9 @@ class Color:
 
     PREDICTION = (0.48, 0.44, 0.82, 0.85)
     PLANNED = (0.84, 0.33, 0.61, 0.95)
-    ACTUAL = (0.20, 0.70, 0.45, 0.45)
+    ACTUAL = (0.35, 0.70, 0.90, 0.85)
+    #: Alpha used when a trace is instead tinted by :data:`PHASE_COLOR` (the paddle's path).
+    PADDLE_PATH_ALPHA = 0.45
     STRIKE = (0.91, 0.20, 0.16, 1.00)
     BOUNCE = (0.61, 0.77, 0.24, 1.00)
     TARGET = (0.91, 0.79, 0.24, 0.95)
@@ -33,10 +35,10 @@ class Color:
 
 # Colors for the four phases of the robot's stroke, in RGBA format
 PHASE_COLOR: dict[Phase, tuple[float, float, float, float]] = {
-    Phase.IDLE: (0.58, 0.58, 0.58, 1.0),
-    Phase.TRACK: (0.00, 0.45, 0.70, 1.0),
-    Phase.SWING: (0.84, 0.37, 0.00, 1.0),
-    Phase.RECOVER: (0.00, 0.62, 0.45, 1.0),
+    Phase.IDLE: (0.76, 0.76, 0.76, 1.0),
+    Phase.TRACK: (0.00, 0.58, 0.90, 1.0),
+    Phase.SWING: (1.00, 0.44, 0.00, 1.0),
+    Phase.RECOVER: (0.00, 0.81, 0.59, 1.0),
 }
 
 

@@ -138,13 +138,23 @@ class RallyAgent:
 
         # The actual path of the ball from the last launch to its first floor bounce
         self._actual_path: list[np.ndarray] = []
-        self._actual_path_phases: list[Phase] = []
         self._actual_path_active = False
         self._actual_path_next_sample = -np.inf
 
         #: Cached conversion of `_actual_path`, rebuilt only when it has grown
         self._actual_path_array = np.zeros((0, 3))
         self._actual_path_array_len = 0
+
+        # The paddle's actual (measured) position over the same span as the ball's path
+        # above, and frozen at the same moment (the ball's first floor bounce).
+        self._paddle_path: list[np.ndarray] = []
+        self._paddle_path_phases: list[Phase] = []
+        self._paddle_path_active = False
+        self._paddle_path_next_sample = -np.inf
+
+        #: Cached conversion of `_paddle_path`, rebuilt only when it has grown
+        self._paddle_path_array = np.zeros((0, 3))
+        self._paddle_path_array_len = 0
 
     # --------------------------------------------------------------- helpers
     def _ready_trajectory(self, start: TaskState, now: float, duration: float = 0.6) -> GoToTrajectory:
@@ -189,10 +199,16 @@ class RallyAgent:
 
         # Old trace disappears the instant the new ball is launched; the new one starts right at the launch point.
         self._actual_path = [self.scene.ball.position.copy()]
-        self._actual_path_phases = [self.phase]
         self._actual_path_active = True
         self._actual_path_next_sample = self.scene.time + self._PATH_SAMPLE_DT
         self._actual_path_array_len = 0  # invalidate the cache: a new list means a stale length could alias
+
+        # Same reset for the paddle's trace, seeded with its current (pre-serve) position.
+        self._paddle_path = [self.arm.measure().position.copy()]
+        self._paddle_path_phases = [self.phase]
+        self._paddle_path_active = True
+        self._paddle_path_next_sample = self.scene.time + self._PATH_SAMPLE_DT
+        self._paddle_path_array_len = 0
 
     def _find_ground_contact(self) -> np.ndarray | None:
         """Position of the ball's first contact with the floor this step, if any."""
@@ -379,11 +395,19 @@ class RallyAgent:
         if self._actual_path_active:
             if ground_contact is not None or now >= self._actual_path_next_sample:
                 self._actual_path.append(self.scene.ball.position.copy())
-                self._actual_path_phases.append(self.phase)
                 self._actual_path_next_sample = now + self._PATH_SAMPLE_DT
             if ground_contact is not None:
                 self._actual_path_active = False  # trace freezes here until the next serve()
         self._check_landing(ground_contact)
+
+        # Record the paddle's actual position over the same span, frozen at the same moment
+        if self._paddle_path_active:
+            if ground_contact is not None or now >= self._paddle_path_next_sample:
+                self._paddle_path.append(measured.position.copy())
+                self._paddle_path_phases.append(self.phase)
+                self._paddle_path_next_sample = now + self._PATH_SAMPLE_DT
+            if ground_contact is not None:
+                self._paddle_path_active = False  # trace freezes here until the next serve()
 
         # Return diagnostics for logging and overlay display
         return AgentDiagnostics(
@@ -416,11 +440,26 @@ class RallyAgent:
         return self._actual_path_array
 
     @property
-    def actual_path_phases(self) -> list[Phase]:
-        """:class:`Phase` recorded alongside every point of :attr:`actual_path`."""
-        if len(self._actual_path) < 2:
+    def paddle_path(self) -> np.ndarray:
+        """True paddle positions from the last launch to the ball's first floor bounce.
+
+        Converted from the recording buffer on demand and cached until it
+        grows again, since a rebuild replaces (never mutates) the cached array.
+        """
+        if len(self._paddle_path) < 2:
+            return np.zeros((0, 3))
+
+        if self._paddle_path_array_len != len(self._paddle_path):
+            self._paddle_path_array = np.asarray(self._paddle_path, dtype=float)
+            self._paddle_path_array_len = len(self._paddle_path)
+        return self._paddle_path_array
+
+    @property
+    def paddle_path_phases(self) -> list[Phase]:
+        """:class:`Phase` recorded alongside every point of :attr:`paddle_path`."""
+        if len(self._paddle_path) < 2:
             return []
-        return list(self._actual_path_phases)
+        return list(self._paddle_path_phases)
 
     def maybe_serve(self) -> bool:
         """Serve again once the rally is over or the interval has elapsed.

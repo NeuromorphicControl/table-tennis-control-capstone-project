@@ -22,8 +22,8 @@ from ..world import load_scene
 
 _KEY_SPACE = 32
 _KEY_PAUSE = ord("6")
-_KEY_TRAJECTORIES = ord("7")
-_KEY_ACTUAL_PATH = ord("8")
+_KEY_BALL_PATH = ord("7")
+_KEY_PADDLE_PATH = ord("8")
 _KEY_AUTO_SERVE = ord("9")
 
 _VIEWER_SYNC_RATE = 60.0
@@ -34,7 +34,8 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--seed", type=int, default=37, help="random seed for serves and targets (default: 37)")
     parser.add_argument("--serve-interval", type=float, default=None, help="seconds between serves")
     parser.add_argument("--no-overlay", action="store_true", help="disable the in-window overlay")
-    parser.add_argument("--no-actual-path", action="store_true", help="hide the ball's real flight trace, independently of the predicted/planned trajectories")
+    parser.add_argument("--no-ball-path", action="store_true", help="hide the ball's real flight trace, independently of the predicted/planned trajectories")
+    parser.add_argument("--no-paddle-path", action="store_true", help="hide the paddle's real position trace, colored by the robot's current stroke phase")
     parser.add_argument("--no-collision-avoidance", action="store_true", help="switch off the repulsive potential field (the arm may then hit the table)")
     parser.add_argument("--sensor-delay", type=int, default=None, help="measurement delay in control steps")
     parser.add_argument("--debug-plots", action="store_true", help="export one PNG per serve with tracking/planning diagnostics (see --debug-plots-dir)")
@@ -61,7 +62,8 @@ def config_from_args(args: argparse.Namespace) -> SimulationConfig:
 
     # Set the visualization and collision flags based on the command line arguments
     config.visualisation.enabled = not args.no_overlay
-    config.visualisation.show_actual_path = not args.no_actual_path
+    config.visualisation.show_ball_path = not args.no_ball_path
+    config.visualisation.show_paddle_path = not args.no_paddle_path
     config.collision.enabled = not args.no_collision_avoidance
 
     # Set the serve interval if specified
@@ -102,12 +104,10 @@ def main(argv: list[str] | None = None) -> int:
                 state["serve"] = True
         elif keycode == _KEY_PAUSE:
             state["paused"] = not state["paused"]
-        elif keycode == _KEY_TRAJECTORIES:
-            show = not config.visualisation.show_predicted_trajectory
-            config.visualisation.show_predicted_trajectory = show
-            config.visualisation.show_plan = show
-        elif keycode == _KEY_ACTUAL_PATH:
-            config.visualisation.show_actual_path = not config.visualisation.show_actual_path
+        elif keycode == _KEY_BALL_PATH:
+            config.visualisation.show_ball_path = not config.visualisation.show_ball_path
+        elif keycode == _KEY_PADDLE_PATH:
+            config.visualisation.show_paddle_path = not config.visualisation.show_paddle_path
         elif keycode == _KEY_AUTO_SERVE:
             state["auto_serve"] = not state["auto_serve"]
 
@@ -115,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     print(__doc__.strip().splitlines()[0]) # type: ignore
     print(
         "keys: [space] serve now (manual mode only)   [6] pause   "
-        "[7] toggle prediction/plan   [8] toggle actual path   "
+        "[7] toggle ball's actual-path trace   [8] toggle paddle's actual-position trace   "
         "[9] toggle auto-serve (on: serves by itself, off: [space] serves)"
     )
 

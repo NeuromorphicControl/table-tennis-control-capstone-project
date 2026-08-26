@@ -29,9 +29,8 @@ class _ServeRecord:
     time: list = field(default_factory=list)
     phase: list = field(default_factory=list)
 
-    # Ball path from launch to its first floor bounce only 
+    # Ball path from launch to its first floor bounce only
     path_position: list = field(default_factory=list)
-    path_phase: list = field(default_factory=list)
     position_error: list = field(default_factory=list)
     orientation_error: list = field(default_factory=list)
 
@@ -124,7 +123,6 @@ class ServeDebugPlotter:
         record.time.append(diagnostics.time)
         record.phase.append(diagnostics.phase)
         record.path_position = list(agent.actual_path)
-        record.path_phase = list(agent.actual_path_phases)
         record.position_error.append(diagnostics.arm.position_error)
         record.orientation_error.append(diagnostics.arm.orientation_error)
         torque_limits = agent.arm.controller.torque_limits
@@ -277,7 +275,6 @@ class ServeDebugPlotter:
         time = np.asarray(record.time)
         phases = record.phase
         positions = np.asarray(record.path_position).reshape(-1, 3)
-        path_phases = record.path_phase
 
         # Create a 3x2 grid of subplots for the serve diagnostics, with shared x-axes for the position/orientation and torques/speed plots
         fig, axes = plt.subplot_mosaic(
@@ -295,11 +292,11 @@ class ServeDebugPlotter:
         fig.suptitle(f"Serve {record.index}  (launch t = {record.start_time:.2f} s)   {outcome}")
 
         # Plot the top-down view of the ball's path, with the table and net, and the paddle at impact if it exists
-        self._plot_path(axes["top"], positions[:, 1], positions[:, 0], path_phases, record, 1, 0, "y [m]", "x [m]", "Top-down", xlim=self._y_limits, ylim=self._x_limits)
+        self._plot_path(axes["top"], positions[:, 1], positions[:, 0], record, 1, 0, "y [m]", "x [m]", "Top-down", xlim=self._y_limits, ylim=self._x_limits)
 
         # Plot the side view of the ball's path, with the table and net, and the paddle at impact if it exists
         side_a, side_b = positions[:, 1], positions[:, 2]
-        self._plot_path(axes["side"], side_a, side_b, path_phases, record, 1, 2, "y [m]", "z [m]", "Side view", show_floor=True, xlim=self._y_limits, ylim=self._z_limits)
+        self._plot_path(axes["side"], side_a, side_b, record, 1, 2, "y [m]", "z [m]", "Side view", show_floor=True, xlim=self._y_limits, ylim=self._z_limits)
 
         # Plot the position error over time, with the strike times marked
         self._plot_metric(axes["position"], time, record.position_error, phases, record, "position error [m]", "Position error", hide_xlabel=True)
@@ -350,7 +347,7 @@ class ServeDebugPlotter:
 
         return [Line2D([0], [0], color=PHASE_COLOR[phase][:3], linewidth=linewidth, label=phase.value.capitalize()) for phase in Phase]
 
-    def _plot_path(self, ax, a, b, phases, record: _ServeRecord, idx_a, idx_b, xlabel, ylabel, title, show_floor: bool = False, xlim: tuple[float, float] | None = None, ylim: tuple[float, float] | None = None) -> None:
+    def _plot_path(self, ax, a, b, record: _ServeRecord, idx_a, idx_b, xlabel, ylabel, title, show_floor: bool = False, xlim: tuple[float, float] | None = None, ylim: tuple[float, float] | None = None) -> None:
         """One 2-D projection of the ball's path, with the table and net, and the paddle at impact if it exists."""
         if self.table is not None:
             # Plot table outline
@@ -365,9 +362,8 @@ class ServeDebugPlotter:
             # Plot the floor at z=0 (or y=0 in the top-down view) as a horizontal line
             ax.axhline(0.0, color="0.2", linewidth=1.3, zorder=0, label="floor")
 
-        # Color the ball's path by phase, so that the trajectory segments match the background shading in the metric plots below
-        for phase, start, end in phase_runs(phases):
-            ax.plot(a[start : end + 1], b[start : end + 1], color=PHASE_COLOR[phase][:3], linewidth=2.0, zorder=2)
+        # The ball's actual path, in one constant color
+        ax.plot(a, b, color=Color.ACTUAL[:3], alpha=Color.ACTUAL[3], linewidth=2.0, zorder=2, label="ball path")
 
         # Mark the target position (if it exists) and the planned bounce points (if they exist), with the last one highlighted as the final plan
         if record.target is not None:

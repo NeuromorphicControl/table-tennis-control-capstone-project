@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 
 import numpy as np
+from tqdm import tqdm
 
 from table_tennis_control.agent import RallyAgent, RallyStatistics
 from table_tennis_control.config import SimulationConfig
@@ -28,13 +29,17 @@ from table_tennis_control.control import RobotArm
 from table_tennis_control.world import load_scene
 
 
-def run_one(seed: int, duration: float) -> RallyStatistics:
+BAR_FORMAT = "{desc}{percentage:3.0f}%|{bar}| {n:.0f}/{total:.0f} {unit} [{elapsed}<{remaining}]"
+
+
+def run_one(seed: int, duration: float, desc: str | None = None) -> RallyStatistics:
     """Run one full headless session and return its accumulated statistics.
-    
+
     Args:
         seed: Random seed to use for this session.
         duration: Simulated seconds to run this session.
-    
+        desc: Progress bar label; defaults to a plain seed label if omitted.
+
     Returns:
         RallyStatistics object containing the accumulated statistics for this session.
     """
@@ -47,9 +52,11 @@ def run_one(seed: int, duration: float) -> RallyStatistics:
     agent = RallyAgent(scene, arm, config)
 
     # Run the simulation for the specified duration, stepping the agent and serving as needed
-    while scene.time < duration:
-        agent.maybe_serve()
-        agent.step()
+    with tqdm(total=duration, desc=desc or f"seed {seed}", unit="s", bar_format=BAR_FORMAT, leave=False) as run_bar:
+        while scene.time < duration:
+            agent.maybe_serve()
+            agent.step()
+            run_bar.update(min(scene.time, duration) - run_bar.n)
     return agent.statistics
 
 
@@ -58,9 +65,15 @@ def run_benchmark(seeds: list[int], duration: float) -> dict[str, float]:
     total_serves = total_strikes = total_landings = total_on_half = 0
     all_errors: list[float] = []
 
+    # Pad descriptions to a common width so the outer and inner bars line up
+    seed_width = max(len(str(seed)) for seed in seeds)
+    label_width = max(len("benchmark"), len("seed ") + seed_width) + 1
+
     # Run each seed and accumulate statistics
-    for seed in seeds:
-        stats = run_one(seed, duration)
+    outer_desc = "benchmark".ljust(label_width)
+    for seed in tqdm(seeds, desc=outer_desc, unit="seed", bar_format=BAR_FORMAT, leave=False):
+        inner_desc = f"seed {seed:>{seed_width}}".ljust(label_width)
+        stats = run_one(seed, duration, desc=inner_desc)
         total_serves += stats.serves
         total_strikes += stats.strikes
         total_landings += stats.landings

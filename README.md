@@ -13,7 +13,7 @@ perception with a learned (deep-reinforcement-learning) control policy,
 every component here — observer, forward model, planner, controller — is a
 classical, model-based design.
 
-![architecture](docs/architecture.svg)
+![architecture](docs/architecture.png)
 
 ---
 
@@ -81,9 +81,10 @@ python -m table_tennis_control
 
 The MuJoCo viewer opens, the launcher starts serving and the robot plays. All
 diagnostics — the predicted ball trajectory, the planned return and strike
-point, the ball's actual path, the target, and the robot's current stroke
-phase — are drawn inside that window. Rally statistics (serves, strikes,
-landing error) print to the console once the run ends.
+point, the ball's actual path (one constant color), the paddle's actual
+position (colored by the robot's current stroke phase), the target, and a
+text label naming that phase — are drawn inside that window. Rally statistics
+(serves, strikes, landing error) print to the console once the run ends.
 
 **Keys**
 
@@ -97,9 +98,12 @@ rather than instead of it, so this project's own bindings live on the digits
 | --- | --- |
 | `space` | serve now (only while auto-serve is off, see `9` below) |
 | `6` | pause / resume |
-| `7` | toggle the predicted/planned trajectory overlay |
-| `8` | toggle the ball's actual-path trace |
+| `7` | toggle the ball's actual-path trace |
+| `8` | toggle the paddle's actual-position trace |
 | `9` | toggle auto-serve (on: serves by itself; off: `space` serves) |
+
+The predicted/planned trajectory overlay has no key of its own; it is always
+on while the overlay (`--no-overlay`) is.
 
 **Useful options**
 
@@ -110,6 +114,8 @@ ttc-sim --serve-interval 2.5      # serve more often
 ttc-sim --sensor-delay 8          # stress the predictor's delay compensation
 ttc-sim --no-collision-avoidance  # switch the potential field off
 ttc-sim --no-overlay              # drop the whole in-window overlay
+ttc-sim --no-ball-path            # hide the ball's actual-path trace
+ttc-sim --no-paddle-path          # hide the paddle's actual-position trace
 ttc-sim --no-auto-serve           # serve manually with [space] instead
 ttc-sim --debug-plots             # export one tracking/planning PNG per serve
 ```
@@ -351,10 +357,9 @@ launcher ranges and the overlay.
 
 Claude (Anthropic) was used to rewrite the module/function docstrings from
 earlier, cruder versions into their current form, and to help write this
-README, the project's other documentation, the `tests/` suite, and the
-architecture diagram. AI assistance was also used for debugging: a number of
-issues in this project were diagnosed and fixed with Claude's help after we
-weren't able to resolve them on our own.
+README, the project's other documentation, and the `tests/` suite. AI assistance
+was also used for debugging: a number of issues in this project were diagnosed 
+and fixed with Claude's help after we weren't able to resolve them on our own.
 
 ## Authors
 

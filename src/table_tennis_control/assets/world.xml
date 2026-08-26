@@ -33,6 +33,10 @@
 
   <visual>
     <global offwidth="1920" offheight="1080" azimuth="90" elevation="-25"/>
+    <!-- Camera-attached fill light; the scene's one directional light alone
+         left off-facing surfaces (the arm's dark plastic in particular)
+         reading as near-black from most viewpoints. -->
+    <headlight ambient="0.25 0.25 0.25" diffuse="0.55 0.55 0.55" specular="0.4 0.4 0.4"/>
     <rgba haze="0.15 0.25 0.35 1"/>
     <quality shadowsize="4096"/>
     <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15" zfar="40" haze="0.3" znear="0.005"/>
@@ -56,7 +60,7 @@
 
   <worldbody>
     <!-- Lights -->
-    <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
+    <light directional="true" ambient="0.25 0.25 0.25" diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
 
     <!-- Cameras -->
     <camera name="top_down" pos="0 0 10" euler="0 0 90"/>

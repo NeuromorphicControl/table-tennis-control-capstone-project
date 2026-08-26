@@ -65,8 +65,10 @@ class PlayOverlay:
             self._draw_prediction(diagnostics.prediction)
         if self.visual.show_plan:
             self._draw_plan(diagnostics)
-        if self.visual.show_actual_path:
-            self._draw_actual_path(agent.actual_path, agent.actual_path_phases)
+        if self.visual.show_ball_path:
+            self._draw_ball_path(agent.actual_path)
+        if self.visual.show_paddle_path:
+            self._draw_paddle_path(agent.paddle_path, agent.paddle_path_phases)
         self._draw_target(agent)
         self._draw_state_indicator(diagnostics.phase)
 
@@ -122,28 +124,38 @@ class PlayOverlay:
                 width=self._line_width(2.5),
             )
 
-    def _draw_actual_path(self, path: np.ndarray, phases: list[Phase]) -> None:
-        """The ball's real (simulated) flight, colored by whichever phase the
+    def _draw_ball_path(self, path: np.ndarray) -> None:
+        """The ball's real (simulated) flight, in one constant color.
+
+        Args:
+            path: The ball's actual path, as a sequence of 3-D positions.
+        """
+        if path.shape[0] < 2:
+            return
+        self.overlay.polyline(path, Color.ACTUAL, width=self._line_width(2.5))
+
+    def _draw_paddle_path(self, path: np.ndarray, phases: list[Phase]) -> None:
+        """The paddle's real (measured) position, colored by whichever phase the
         robot was in while each segment of it was recorded -- an old segment
         keeps the color of the phase active when it was flown through, only
         the newest segment picks up the current one.
 
         Args:
-            path: The ball's actual path, as a sequence of 3-D positions.
+            path: The paddle's actual position, as a sequence of 3-D positions.
             phases: The robot's stroke phase at each point in the path.
         """
         if path.shape[0] < 2 or len(phases) != path.shape[0]:
             return
 
         for phase, start, end in phase_runs(phases):
-            self._draw_path_segment(path[start : end + 1], phase)
+            self._draw_phase_tinted_segment(path[start : end + 1], phase)
 
-    def _draw_path_segment(self, segment: np.ndarray, phase: Phase) -> None:
+    def _draw_phase_tinted_segment(self, segment: np.ndarray, phase: Phase) -> None:
         if segment.shape[0] < 2:
             return
-        
+
         color = PHASE_COLOR[phase]
-        faded = (color[0], color[1], color[2], Color.ACTUAL[3])
+        faded = (color[0], color[1], color[2], Color.PADDLE_PATH_ALPHA)
         self.overlay.polyline(segment, faded, width=self._line_width(2.5))
 
     def _draw_target(self, agent: RallyAgent) -> None:

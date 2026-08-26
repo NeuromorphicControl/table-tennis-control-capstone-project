@@ -420,7 +420,8 @@ class VisualisationConfig:
     update_rate: float = 24.0
     show_predicted_trajectory: bool = True
     show_plan: bool = True
-    show_actual_path: bool = True
+    show_ball_path: bool = True
+    show_paddle_path: bool = True
 
 
 @dataclass
