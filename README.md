@@ -45,7 +45,7 @@ classical, model-based design.
 
 ## Installation
 
-Requires Python ≥ 3.11.
+Requires Python ≥ 3.10 and < 3.14.
 
 ```bash
 python -m venv .venv
