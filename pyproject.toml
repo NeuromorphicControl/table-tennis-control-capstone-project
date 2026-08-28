@@ -44,7 +44,7 @@ ttc-sim = "table_tennis_control.apps.simulate:main"
 ttc-render = "table_tennis_control.apps.render:main"
 
 [project.urls]
-Repository = "https://github.com/Techniksam/neuromorphic-control-capstone-project"
+Repository = "https://github.com/NeuromorphicControl/table-tennis-control-capstone-project"
 
 [tool.setuptools.packages.find]
 where = ["src"]
