@@ -344,7 +344,7 @@ src/table_tennis_control/
     assets/             world.xml and the meshes
 tests/                  pytest suite
 scripts/                benchmark harness and diagnostic tooling
-docs/                   architecture diagram (more design notes to follow)
+docs/                   architecture diagram
 ```
 
 Everything you might want to tune lives in `src/table_tennis_control/config.py`:
