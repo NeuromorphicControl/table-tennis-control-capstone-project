@@ -1,36 +1,4 @@
-r"""Artificial potential field that keeps the arm off the table -- and itself.
-
-Instead of a hard constraint we use the classic
-repulsive potential of Khatib,
-
-.. math::
-
-    U(d) = \tfrac12 k \left(\frac{1}{d} - \frac{1}{d_0}\right)^2, \qquad
-    F(d) = k \left(\frac{1}{d} - \frac{1}{d_0}\right)\frac{1}{d^2}\,\hat n,
-
-evaluated between the closest points of each (link, obstacle) pair, and
-between every (link, link) pair that is not directly joined to it (a link
-touches its own neighbours at the shared joint by construction, so those
-pairs would only ever produce spurious repulsion).
-
-A velocity-dependent damping term is added so that the field also brakes an
-approach instead of only pushing back, which avoids the bouncing that a pure
-position potential produces.
-
-The Khatib force itself already tapers smoothly to zero as ``d -> d0``, but
-the (expensive) distance queries are only recomputed every
-:attr:`~table_tennis_control.config.CollisionConfig.decimation` steps and the
-torque held constant in between -- a piecewise-constant signal that steps to
-a new value each time a query reruns.  A newly (de)activated pair therefore
-still shows up as a small velocity discontinuity, exactly the failure mode
-smooth constraint-transition schemes such as Obregon et al. (2017),
-*"Dealing with Joint Limits in Task-Space Control for Mobile Manipulators"*,
-are built to avoid.  Applying their spirit here without adopting their full
-hierarchical task-stack machinery: the torque actually returned is a
-first-order blend towards the latest decimated target rather than the target
-itself, so it ramps in and out smoothly regardless of when the target last
-changed.
-"""
+"""Implements a damped Khatib-style repulsive potential field that keeps the arm's links off the table and off each other."""
 
 from __future__ import annotations
 

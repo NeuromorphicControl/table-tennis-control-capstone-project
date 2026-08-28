@@ -1,8 +1,8 @@
-# Benchmark script
+# Scripts
 
 This folder holds the benchmark harness used to evaluate this project's
-behaviour end-to-end — the same measurement every change to the control
-pipeline is judged against before being kept.
+behaviour end-to-end, plus a `report_figures/` subfolder of scripts that
+generate report-ready figures for the write-up.
 
 ## `benchmark.py`
 
@@ -31,3 +31,12 @@ of serves, so two runs of the benchmark are a fair before/after comparison.
 
 Assumes the package is installed (`pip install -e .` from the project root)
 and is run from the project root.
+
+## `report_figures/`
+
+Scripts that turn a headless run into a report-ready figure instead of a
+number: `serve_error_figure.py` (paddle position/orientation error over one
+exemplary serve), `render_phase_gallery.py` (five snapshot frames of that
+same serve's stroke) and `sensor_delay_sweep.py` (target error vs. sensor
+delay). See [`report_figures/README.md`](report_figures/README.md) for
+details.

@@ -1,14 +1,4 @@
-"""Keeps overlay line widths and label text legible across render resolutions.
-
-MuJoCo draws user-geom lines (:meth:`SceneOverlay.line`/``polyline``) at a
-width given in on-screen *pixels*, and its label font is one of a handful of
-discrete presets (:class:`mujoco.mjtFontScale`) -- neither tracks the
-requested render resolution on its own. A width picked for 720p all but
-disappears at 4K and looks disproportionately fat at 240p. ``REFERENCE_HEIGHT``
-is the resolution the hardcoded widths in :mod:`play_overlay` were tuned for;
-everything here scales relative to it, while the robot mesh itself (rendered
-through the ordinary camera projection) needs no such correction.
-"""
+"""Scales overlay line widths and label font presets so they stay legible across different render resolutions."""
 
 from __future__ import annotations
 

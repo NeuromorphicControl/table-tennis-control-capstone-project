@@ -1,13 +1,4 @@
-"""Every color the overlay and the debug plots use, in one place.
-
-:data:`PHASE_COLOR` is the one palette that has to carry real information at
-a glance. It is how both the live overlay and the offline per-serve plots
-tell the robot's four stroke phases apart. Everything else in :class:`Color`
-and :data:`JOINT_COLORS` is chosen to sit in the gaps between those four
-hues, so a trajectory/marker color is never mistaken for a phase and vice
-versa, while still reading as one consistent, cohesive set rather than an
-unrelated grab-bag.
-"""
+"""Defines every color used by the in-window overlay and the offline per-serve debug plots."""
 
 from __future__ import annotations
 
@@ -31,6 +22,8 @@ class Color:
     TARGET = (0.91, 0.79, 0.24, 0.95)
     GRID = (1.00, 1.00, 1.00, 0.22)
     TEXT = (1.00, 1.00, 1.00, 1.00)
+    #: Translucent, so the ball's real (opaque) mesh always reads through it when the two coincide.
+    GHOST = (1.00, 1.00, 1.00, 0.35)
 
 
 # Colors for the four phases of the robot's stroke, in RGBA format

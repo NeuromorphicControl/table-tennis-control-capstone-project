@@ -1,23 +1,4 @@
-"""The rally agent: the full control hierarchy in one object.
-
-The block diagram this implements is the one from Lecture 6, with the ball
-playing the role of the exogenous system::
-
-    plant -> [sensor: delay] -> [observer] -> [forward model] -> [strike planner]
-                                                                      |
-                                                          reference trajectory
-                                                                      v
-                                    [operational-space control + feedback linearisation]
-                                                                      |
-                                                                    torque
-                                                                      v
-                                                                   [plant]
-
-The sensor's delay is compensated for on the way out of the observer (see
-:meth:`RallyAgent._estimated_state`), not inside it. The outer loop (sensor,
-observer, prediction, planning) runs at :attr:`PlannerConfig.replan_rate`;
-the inner loop (torque control) runs at the simulation rate.
-"""
+"""Defines the rally agent that wires the sensor, observer, predictor, planner and controller into the full table-tennis control loop."""
 
 from __future__ import annotations
 
@@ -81,6 +62,7 @@ class AgentDiagnostics:
     ball_position: np.ndarray
     ball_velocity: np.ndarray
     disturbance: np.ndarray
+    sensor_position: np.ndarray
     time_to_impact: float
 
 
@@ -421,6 +403,7 @@ class RallyAgent:
             ball_position=self.observer.position.copy(),
             ball_velocity=self.observer.velocity.copy(),
             disturbance=self.observer.disturbance.copy(),
+            sensor_position=measurement,
             time_to_impact=time_to_impact,
         )
 

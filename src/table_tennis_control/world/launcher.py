@@ -1,10 +1,4 @@
-"""Serves balls from the opponent's side of the table.
-
-The launcher does not pick a velocity at random -- it picks *where the serve
-should bounce* on the robot's half and inverts the ballistic flight for it.
-That way every serve is a legal, playable ball instead of an arbitrary throw
-from the middle of the world.
-"""
+"""Implements the ball launcher that serves legal, playable balls from the opponent's side of the table."""
 
 from __future__ import annotations
 

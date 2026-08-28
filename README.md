@@ -86,6 +86,13 @@ position (colored by the robot's current stroke phase), the target, and a
 text label naming that phase — are drawn inside that window. Rally statistics
 (serves, strikes, landing error) print to the console once the run ends.
 
+Whenever `--sensor-delay` is greater than zero, a translucent white "ghost"
+ball also appears at the sensor's raw, still-delayed measurement — literally
+the position the pipeline is currently seeing, before the predictor rolls it
+forward to compensate for the lag. It shows up automatically (no flag or key
+needed) and disappears again at the default zero delay; the gap between the
+ghost and the real ball is the sensor lag made visible.
+
 **Keys**
 
 The viewer opens with the arm serving itself automatically. Every letter key
@@ -111,7 +118,7 @@ on while the overlay (`--no-overlay`) is.
 ttc-sim --seed 3                  # different reproducible serves/targets (default 37)
 ttc-sim --speed 0.25              # quarter speed, to watch a stroke closely
 ttc-sim --serve-interval 2.5      # serve more often
-ttc-sim --sensor-delay 8          # stress the predictor's delay compensation
+ttc-sim --sensor-delay 8          # stress the predictor's delay compensation (also shows the sensor ghost)
 ttc-sim --no-collision-avoidance  # switch the potential field off
 ttc-sim --no-overlay              # drop the whole in-window overlay
 ttc-sim --no-ball-path            # hide the ball's actual-path trace
@@ -157,7 +164,10 @@ on-target-half rate, net-clip rate, and mean/median landing error:
 python scripts/benchmark.py --seeds 15 --duration 20
 ```
 
-See `scripts/README.md` for the rest of the diagnostic tooling.
+`scripts/report_figures/` has a few scripts that render report-ready
+figures straight from a headless run instead — per-serve tracking error,
+snapshot frames of that same stroke, and target error vs. sensor delay. See
+`scripts/README.md` for the rest of the diagnostic tooling.
 
 ---
 
@@ -203,7 +213,10 @@ sensor doesn't estimate anything, it just buffers and re-reports, and
 everything downstream (predictor, planner) has to compensate for the lag it
 introduces rather than the sensor hiding it. `--sensor-delay` lets you see
 that compensation work (validated up to at least 8 control steps with no
-measurable accuracy cost).
+measurable accuracy cost) — the overlay draws a translucent ghost ball at
+exactly what `BallSensor.measure` last returned, so the raw lag and the
+predictor's correction for it are both visible at once, one on top of the
+other.
 
 ### Observer (`table_tennis_control.estimation.ball_observer`)
 
@@ -357,9 +370,10 @@ launcher ranges and the overlay.
 
 Claude (Anthropic) was used to rewrite the module/function docstrings from
 earlier, cruder versions into their current form, and to help write this
-README, the project's other documentation, and the `tests/` suite. AI assistance
-was also used for debugging: a number of issues in this project were diagnosed 
-and fixed with Claude's help after we weren't able to resolve them on our own.
+README, the project's other documentation, the `tests/` suite and the scripts 
+for generating the figures for the report. AI assistance was also used for 
+debugging: a number of issues in this project were diagnosed and fixed with 
+Claude's help after we weren't able to resolve them on our own.
 
 ## Authors
 

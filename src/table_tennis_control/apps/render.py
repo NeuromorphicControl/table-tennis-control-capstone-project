@@ -1,8 +1,4 @@
-"""Off-screen rendering: ``ttc-render``.
-
-Runs the same agent as the interactive app but writes an MP4 instead of
-opening a window, so the overlay ends up baked into the video.
-"""
+"""Command-line app (``ttc-render``) that runs the rally agent off-screen and writes the result to an MP4 video with the overlay baked in."""
 
 from __future__ import annotations
 

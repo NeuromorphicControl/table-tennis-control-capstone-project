@@ -1,8 +1,4 @@
-"""Interactive simulation: ``ttc-sim`` / ``python -m table_tennis_control``.
-
-Opens the MuJoCo viewer, serves balls from the opponent's side and lets the
-robot return them.  All diagnostics are drawn as an overlay inside the window.
-"""
+"""Command-line app (``ttc-sim`` / ``python -m table_tennis_control``) that runs the interactive MuJoCo simulation with an in-window diagnostic overlay."""
 
 from __future__ import annotations
 

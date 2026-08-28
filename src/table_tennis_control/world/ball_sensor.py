@@ -1,14 +1,4 @@
-"""Delayed position sensor for the ball -- e.g. a real camera system.
-
-The plant (:class:`~table_tennis_control.world.ball.Ball`) is instantaneous;
-nothing downstream is allowed to see it directly. This is what everything
-else actually reads: a position measurement that lags the true ball by a
-fixed number of control steps, the way a real vision system would. The
-observer (:mod:`table_tennis_control.estimation.ball_observer`) is a plain
-state estimator with no notion of delay; the predictor is what compensates
-for the lag reported here (see
-:meth:`~table_tennis_control.agent.RallyAgent._estimated_state`).
-"""
+"""Implements a delayed ball-position sensor that mimics the fixed latency of a real vision system."""
 
 from __future__ import annotations
 

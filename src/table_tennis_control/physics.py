@@ -1,9 +1,4 @@
-"""Analytic ballistics used by the forward model and by the planner.
-
-All functions are written so that they broadcast over leading batch
-dimensions, which lets the planner evaluate thousands of candidate strikes in
-a couple of vectorised NumPy calls instead of a Python loop.
-"""
+"""Provides vectorised analytic ballistics functions used by the forward model and the strike planner."""
 
 from __future__ import annotations
 

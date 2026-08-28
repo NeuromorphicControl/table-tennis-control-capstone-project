@@ -69,6 +69,8 @@ class PlayOverlay:
             self._draw_ball_path(agent.actual_path)
         if self.visual.show_paddle_path:
             self._draw_paddle_path(agent.paddle_path, agent.paddle_path_phases)
+        if agent.config.sensor.delay_steps > 0:
+            self._draw_sensor_ghost(agent, diagnostics)
         self._draw_target(agent)
         self._draw_state_indicator(diagnostics.phase)
 
@@ -157,6 +159,16 @@ class PlayOverlay:
         color = PHASE_COLOR[phase]
         faded = (color[0], color[1], color[2], Color.PADDLE_PATH_ALPHA)
         self.overlay.polyline(segment, faded, width=self._line_width(2.5))
+
+    def _draw_sensor_ghost(self, agent: RallyAgent, diagnostics: AgentDiagnostics) -> None:
+        """A translucent ball at the sensor's raw, still-delayed measurement.
+
+        Distinct from the observer's (already delay-compensated) estimate:
+        this is literally the last position the pipeline's sensor stage
+        reported, so the gap between the ghost and the real ball is the
+        sensor lag made visible.
+        """
+        self.overlay.sphere(diagnostics.sensor_position, agent.scene.ball.radius, Color.GHOST, label="sensor")
 
     def _draw_target(self, agent: RallyAgent) -> None:
         target = agent.scene.target.position

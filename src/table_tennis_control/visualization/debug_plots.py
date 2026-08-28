@@ -1,10 +1,4 @@
-"""Per-serve debug plots for offline analysis (opt-in via ``--debug-plots``).
-
-Renders one PNG per serve, spanning exactly the ball's flight from its launch
-up to (but not including) the next launch -- the same span
-:meth:`~table_tennis_control.agent.RallyAgent.serve` itself resets state
-over, and the one a rally review actually cares about.
-"""
+"""Renders one offline PNG debug plot per serve for post-hoc rally analysis (opt-in via ``--debug-plots``)."""
 
 from __future__ import annotations
 

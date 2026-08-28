@@ -1,10 +1,4 @@
-"""Picks *where*, *when* and *how* to hit the incoming ball.
-
-This is the high-level planner of the hierarchy from Lecture 6: it searches a
-discrete set of candidate actions (impact point x return type), scores them
-with a cost function and hands the winner down to the low-level
-operational-space controller as a smooth reference trajectory.
-"""
+"""Implements the high-level planner that searches candidate impact points and return types and hands the best-scoring one down as a reference trajectory."""
 
 from __future__ import annotations
 

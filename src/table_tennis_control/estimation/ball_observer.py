@@ -1,22 +1,4 @@
-"""Extended-state observer for the ball (Lecture 4).
-
-The controller never reads ``qvel`` of the ball.  It only gets a position
-measurement and has to reconstruct the velocity -- and the unmodelled
-acceleration (drag, spin, a mis-calibrated gravity) -- from it.  This is the
-classic Luenberger observer with the disturbance appended to the state:
-
-.. math::
-
-    \\dot{\\hat p} &= \\hat v + \\ell_1 (y - \\hat p) \\\\
-    \\dot{\\hat v} &= g + \\hat d + \\ell_2 (y - \\hat p) \\\\
-    \\dot{\\hat d} &= \\ell_3 (y - \\hat p)
-
-With the three observer poles placed at :math:`-\\omega` the gains become
-:math:`\\ell = (3\\omega,\\, 3\\omega^2,\\, \\omega^3)`.  The estimated
-disturbance :math:`\\hat d` is exactly the quantity an active-disturbance-
-rejection scheme would cancel; here it is fed forward into the ballistic
-forward model instead.
-"""
+"""Implements an extended-state Luenberger observer that reconstructs the ball's velocity and residual acceleration from delayed position measurements alone."""
 
 from __future__ import annotations
 

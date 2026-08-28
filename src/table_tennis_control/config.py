@@ -1,9 +1,4 @@
-"""Central configuration for the ping-pong robot.
-
-Every tunable number of the project lives here so that experiments only ever
-touch a single file.  The dataclasses are grouped by the block of the control
-architecture they belong to (plant, observer, planner, controller).
-"""
+"""Central dataclass-based configuration holding every tunable parameter of the ping-pong robot project."""
 
 from __future__ import annotations
 

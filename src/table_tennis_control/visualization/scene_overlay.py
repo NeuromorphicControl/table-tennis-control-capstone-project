@@ -1,10 +1,4 @@
-"""Drawing primitives for the MuJoCo scene overlay.
-
-Everything the project visualises is drawn straight into the MuJoCo scene as
-"user geometry".  That keeps the whole diagnosis inside the one window the
-simulation already owns -- no second matplotlib window, no event loop that
-could stall the control loop, and it shows up in the rendered video for free.
-"""
+"""Provides drawing primitives for rendering diagnostic overlays directly into the MuJoCo scene as user geometry."""
 
 from __future__ import annotations
 

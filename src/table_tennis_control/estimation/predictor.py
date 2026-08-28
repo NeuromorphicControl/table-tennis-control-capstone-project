@@ -1,9 +1,4 @@
-"""Forward model of the flying ball, including table bounces and the net.
-
-This is the "internal model" of Lecture 4: the same equations the plant obeys,
-run ahead of time so that the planner can act on where the ball *will* be
-instead of where it *was*.
-"""
+"""Implements the ballistic forward model that predicts the ball's future flight, including table bounces and net contacts."""
 
 from __future__ import annotations
 

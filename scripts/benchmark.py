@@ -1,20 +1,4 @@
-"""Headless N-seed x T-second benchmark harness.
-
-This is the reusable form of the ad-hoc script pattern used throughout the
-project's tuning/debugging process: run several seeds of a full rally session
-with the visualisation disabled, aggregate RallyStatistics across all of
-them, and report the standard set of metrics used to accept or reject every
-change made to this project.
-
-Usage:
-    python scripts/benchmark.py
-    python scripts/benchmark.py --seeds 15 --duration 20
-    python scripts/benchmark.py --seeds 6 --duration 30 --start-seed 1
-
-The metrics reported (strike rate, on-target-half rate, net-clip rate, mean
-and median landing error) are exactly the ones tracked throughout this
-project's tuning/debugging history.
-"""
+"""Headless N-seed x T-second benchmark."""
 
 from __future__ import annotations
 

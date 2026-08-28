@@ -1,24 +1,4 @@
-r"""Operational-space control of the paddle (Lecture 5/6).
-
-The joint torque is assembled from three clearly separated blocks, exactly the
-decomposition used in the lecture:
-
-.. math::
-
-    u = \underbrace{J^{\mathsf T}\Lambda\,(f^* - \dot J \dot q)}_{u_\text{task}}
-      + \underbrace{C(q,\dot q)\dot q + G(q)}_{u_\text{FL}}
-      + \underbrace{N^{\mathsf T} u_0}_{\text{null space}}
-
-``u_FL`` is the feedback-linearisation term that cancels gravity and the
-Coriolis/centrifugal forces (MuJoCo hands it to us as ``qfrc_bias``).  What is
-left behind is a unit mass floating in task space, so the virtual force
-
-.. math:: f^* = \ddot x_\text{ref} + K_p (x_\text{ref}-x) + K_d(\dot x_\text{ref}-\dot x)
-
-is a plain feed-forward + PD law whose gains directly set the closed-loop
-natural frequency.  Whatever motion is left over is used by the null-space
-term for posture and collision avoidance.
-"""
+"""Implements operational-space control of the paddle via task-space PD control, feedback linearisation and a null-space posture/collision-avoidance term."""
 
 from __future__ import annotations
 

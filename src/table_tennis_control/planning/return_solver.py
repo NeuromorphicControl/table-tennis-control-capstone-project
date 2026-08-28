@@ -1,30 +1,4 @@
-r"""Solves for the ball velocity the paddle has to produce.
-
-Every return is a **shot with one bounce**: the ball must touch one half of
-the table once and only then reach the target.  For a bounce point :math:`b` on the
-plane :math:`z=b_z`, a pre-bounce flight time :math:`t_1` and a post-bounce
-flight time :math:`t_2` the ballistic equations are
-
-.. math::
-
-    b &= p_0 + v_0 t_1 + \tfrac12 a t_1^2 \\
-    T &= b + v_1' t_2 + \tfrac12 a t_2^2, \qquad
-    v_1' = \mathrm{diag}(\mu, \mu, -\varepsilon)\, (v_0 + a t_1).
-
-Eliminating :math:`v_0` leaves a *linear* relation for the horizontal bounce
-coordinates,
-
-.. math:: b_{xy} = \frac{T_{xy}\, t_1 + \mu\, t_2\, p_{0,xy}}{t_1 + \mu\, t_2},
-
-and a quadratic for :math:`t_1`,
-
-.. math:: \tfrac12 a_z t_1^2 + A t_1 + (b_z - p_{0,z}) = 0, \qquad
-          A = \frac{T_z - b_z - \tfrac12 a_z t_2^2}{\varepsilon\, t_2}.
-
-So sweeping a small grid of :math:`t_2` and taking both roots of the quadratic
-enumerates the whole family of legal serves in closed form -- no numerical
-optimisation and fully vectorised over all candidate impact points.
-"""
+"""Solves in closed form for the paddle-exit ball velocity that produces a legal one-bounce return to a target landing point."""
 
 from __future__ import annotations
 
